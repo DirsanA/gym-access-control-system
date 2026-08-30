@@ -1,0 +1,13 @@
+{
+  "name": "nexus-athletic-club",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "dev": "pnpm --parallel --filter my-app --filter gym-access-api dev",
+    "build": "pnpm --filter my-app build && pnpm --filter gym-access-api build",
+    "lint": "pnpm --filter my-app lint",
+    "seed": "pnpm --filter gym-access-api seed",
+    "create-admin": "pnpm --filter gym-access-api create-admin"
+  }
+}
