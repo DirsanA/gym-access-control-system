@@ -2,7 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Dumbbell, TriangleAlert, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Check, Dumbbell, TriangleAlert, Volume2, VolumeX, X } from "lucide-react";
 import { recordCheckIn, verifyMember } from "@/lib/scanner-api";
 import type { AccessResponse, ScannerMember, ScannerState } from "@/types/scanner";
 
@@ -93,8 +93,13 @@ export function ScannerTerminal() {
   const [scanInput, setScanInput] = useState("");
   const [result, setResult] = useState<AccessResponse | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [cameraMessage, setCameraMessage] = useState("");
+  const [cameraActive, setCameraActive] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const cameraTimerRef = useRef<number | null>(null);
   const lastScanRef = useRef<{ memberId: string; at: number } | null>(null);
 
   const focusInput = useCallback(() => {
@@ -126,6 +131,16 @@ export function ScannerTerminal() {
     }, RESET_DELAY_MS);
     return () => window.clearTimeout(timeout);
   }, [scannerState]);
+
+  const stopCamera = useCallback(() => {
+    if (cameraTimerRef.current) window.clearTimeout(cameraTimerRef.current);
+    cameraTimerRef.current = null;
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    setCameraActive(false);
+  }, []);
+
+  useEffect(() => () => stopCamera(), [stopCamera]);
 
   const setFinalState = useCallback(
     (response: AccessResponse) => {
@@ -181,6 +196,51 @@ export function ScannerTerminal() {
     },
     [scannerState, setFinalState]
   );
+
+  async function startMobileScan() {
+    setCameraMessage("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraMessage("Camera scanning is not supported in this browser. Enter the code below.");
+      return;
+    }
+    type Detector = { detect: (image: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>> };
+    type DetectorWindow = Window & { BarcodeDetector?: new (options?: { formats?: string[] }) => Detector };
+    const DetectorClass = (window as DetectorWindow).BarcodeDetector;
+    if (!DetectorClass) {
+      setCameraMessage("Your browser does not support QR detection. Enter the displayed code below.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+      const detector = new DetectorClass({ formats: ["qr_code", "code_128", "code_39"] });
+      const scanFrame = async () => {
+        const video = videoRef.current;
+        if (!video || !cameraStreamRef.current) return;
+        try {
+          const codes = await detector.detect(video);
+          const rawCode = codes[0]?.rawValue?.trim().toUpperCase();
+          if (rawCode) {
+            setScanInput(rawCode);
+            setCameraMessage(`Scanned exactly: ${rawCode}`);
+            stopCamera();
+            void submitScan(rawCode);
+            return;
+          }
+        } catch { /* A frame can be unavailable while the camera starts. */ }
+        cameraTimerRef.current = window.setTimeout(scanFrame, 250);
+      };
+      void scanFrame();
+    } catch {
+      setCameraMessage("Camera permission was not granted. You can still enter the member ID manually.");
+      stopCamera();
+    }
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -252,6 +312,19 @@ export function ScannerTerminal() {
                 />
                 <button type="submit" disabled={scannerState === "CHECKING"}>CHECK ACCESS</button>
               </form>
+              <div className="mobile-scan-tools">
+                <button className="camera-button" type="button" onClick={() => void startMobileScan()} disabled={scannerState === "CHECKING" || cameraActive}>
+                  <Camera size={15} aria-hidden="true" /> {cameraActive ? "CAMERA SCANNING…" : "SCAN WITH PHONE CAMERA"}
+                </button>
+                {cameraActive && <button className="camera-cancel" type="button" onClick={stopCamera}>STOP CAMERA</button>}
+              </div>
+              {cameraActive && <video className="camera-preview" ref={videoRef} muted playsInline aria-label="Camera preview for scanning a membership code" />}
+              {cameraMessage && <p className="scan-readout">{cameraMessage}</p>}
+              <div className="demo-codes" aria-label="Mock membership IDs">
+                <span>TRY MOCK DATA</span>
+                <button type="button" onClick={() => void submitScan("GYM-000123")}>GYM-000123 · ACTIVE</button>
+                <button type="button" onClick={() => void submitScan("GYM-000124")}>GYM-000124 · EXPIRED</button>
+              </div>
               <p className="scanner-hint">Scanner active · Manual entry available</p>
             </div>
           )}

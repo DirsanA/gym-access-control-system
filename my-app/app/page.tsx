@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+ 
 export default function Home() {
   return (
     <main className="scanner-shell">
@@ -15,6 +15,9 @@ export default function Home() {
               <span style={{ display: "block", padding: 14, borderRadius: 8, color: "#121a0a", background: "var(--lime)", fontSize: 11, fontWeight: 900, letterSpacing: ".08em" }}>
                 OPEN ENTRANCE SCANNER
               </span>
+            </Link>
+            <Link href="/admin/members/new" style={{ display: "inline-block", marginTop: 15, color: "var(--lime)", fontSize: 11, fontWeight: 900, letterSpacing: ".08em" }}>
+              OPEN ADMIN MEMBER REGISTRATION
             </Link>
           </div>
         </div>
