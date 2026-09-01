@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { AdminMemberManager } from "@/components/admin-member-manager";
 
 export default function AdminPage() {
-  redirect("/admin/members/new");
+  return <AdminMemberManager />;
 }

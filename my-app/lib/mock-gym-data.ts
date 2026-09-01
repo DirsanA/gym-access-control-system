@@ -33,12 +33,17 @@ const members: GymMember[] = [
   },
 ];
 
+// These indexes mirror the lookups the production database needs. The scanner
+// uses member ID for an O(1) lookup instead of scanning every member record.
+const membersById = new Map(members.map((member) => [member.memberId, member]));
+const membersByPhone = new Map(members.map((member) => [member.phone, member]));
+
 function today(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(new Date());
 }
 
 export function accessFor(memberId: string): AccessResponse {
-  const member = members.find((candidate) => candidate.memberId === memberId.toUpperCase());
+  const member = membersById.get(memberId.toUpperCase());
   if (!member) return { success: false, status: "NOT_FOUND", message: "No member is registered with this ID." };
   if (!member.isActive || member.membershipEndDate < today()) {
     return { success: false, status: "EXPIRED", message: "This membership has expired.", member };
@@ -50,9 +55,24 @@ export function createMember(input: NewMember): GymMember {
   const largestNumber = members.reduce((largest, member) => Math.max(largest, Number(member.memberId.slice(4)) || 0), 122);
   const member: GymMember = { ...input, memberId: `GYM-${String(largestNumber + 1).padStart(6, "0")}`, createdAt: new Date().toISOString() };
   members.unshift(member);
+  membersById.set(member.memberId, member);
+  membersByPhone.set(member.phone, member);
   return member;
 }
 
 export function allMembers(): GymMember[] {
   return members;
+}
+
+export function renewMember(memberId: string, days: number): GymMember | null {
+  const member = membersById.get(memberId.toUpperCase());
+  if (!member) return null;
+  const todayKey = today();
+  const baseKey = member.membershipEndDate >= todayKey ? member.membershipEndDate : todayKey;
+  const base = new Date(`${baseKey}T00:00:00.000Z`);
+  const renewalStart = member.membershipEndDate >= todayKey ? 1 : 0;
+  base.setUTCDate(base.getUTCDate() + days - renewalStart);
+  member.membershipEndDate = base.toISOString().slice(0, 10);
+  member.isActive = true;
+  return member;
 }

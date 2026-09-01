@@ -25,6 +25,10 @@ On supported mobile browsers, **Scan with phone camera** reads QR/barcode values
 
 The API route handlers are located under `app/api`, therefore Vercel deploys frontend and backend together as one project.
 
+## Fast scanner lookups
+
+The mock member store uses direct member-ID and phone indexes. The entrance scanner therefore finds a member by ID without looping through all records. See [`docs/data-performance.md`](docs/data-performance.md) for the production database indexes to create when you connect a persistent database.
+
 ## Important mock-data note
 
 Members are intentionally stored in process memory in `lib/mock-gym-data.ts`. They can reset when a Vercel serverless function restarts, and are not appropriate for real member data. Use a persistent database (for example Vercel Postgres, Neon, or MongoDB Atlas) and authentication before production use.
