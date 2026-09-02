@@ -112,7 +112,7 @@ export function ScannerTerminal() {
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const cameraTimerRef = useRef<number | null>(null);
   const lastScanRef = useRef<{ memberId: string; at: number } | null>(null);
-  const autoStartDoneRef = useRef(false);
+  const [cameraStarted, setCameraStarted] = useState(false);
   const detectorRef = useRef<Detector | null>(null);
   const scannerStateRef = useRef(scannerState);
   scannerStateRef.current = scannerState;
@@ -226,6 +226,7 @@ export function ScannerTerminal() {
       const DetectorClass = (window as DetectorWindow).BarcodeDetector;
       detectorRef.current = DetectorClass ? new DetectorClass({ formats: ["qr_code", "code_128", "code_39"] }) : null;
       setCameraOn(true);
+      setCameraStarted(true);
       setCameraMessage(detectorRef.current ? "Live scanner ready" : "Compatibility mode · scanning live");
       void scanContinuously();
     } catch {
@@ -238,16 +239,12 @@ export function ScannerTerminal() {
     const interval = window.setInterval(() => setNow(new Date()), 1_000);
     const setting = window.localStorage.getItem("gym-scanner-sound");
     const animationFrame = window.requestAnimationFrame(() => setSoundEnabled(setting !== "off"));
-    if (!autoStartDoneRef.current) {
-      autoStartDoneRef.current = true;
-      void startCamera();
-    }
     return () => {
       window.clearInterval(interval);
       window.cancelAnimationFrame(animationFrame);
       stopCamera();
     };
-  }, [startCamera, stopCamera]);
+  }, [stopCamera]);
 
   useEffect(() => {
     if (scannerState === "READY") focusInput();
@@ -361,7 +358,7 @@ export function ScannerTerminal() {
         <div className={`scanner-content ${cameraOn ? "scanner-content--live" : ""}`}>
           {cameraOn ? (
             <div className="scanner-live">
-              <video ref={videoRef} className="scanner-live__video" muted playsInline autoPlay aria-label="Live scanner viewfinder" />
+              <video ref={videoRef} className="scanner-live__video" muted playsInline aria-label="Live scanner viewfinder" />
               <canvas ref={canvasRef} className="scanner-live__canvas" aria-hidden="true" />
               <div className="scanner-live__frame" aria-hidden="true"><i /><i /><i /><i /></div>
               <p className="scanner-live__status">{scannerState === "CHECKING" ? "VERIFYING MEMBERSHIP…" : isResult ? "DETECTED" : "LIVE SCANNING"}</p>
@@ -371,7 +368,41 @@ export function ScannerTerminal() {
             </div>
           ) : (
             <>
-              {!isResult && (
+              {!isResult && !cameraStarted && (
+                <div className="scanner-ready rise-in">
+                  <div className="scanner-orbit" aria-hidden="true"><div /><div /><div /></div>
+                  <p className="status-label">SCANNER READY</p>
+                  <h2>Tap to start camera</h2>
+                  <p className="scanner-copy">Grant camera access when prompted to scan member QR codes.</p>
+                  <div className="mobile-scan-tools">
+                    <button className="camera-button camera-button--primary" type="button" onClick={() => void startCamera()} disabled={scannerState === "CHECKING"}>
+                      <ScanLine size={18} aria-hidden="true" /> START CAMERA
+                    </button>
+                  </div>
+                  <p className="scanner-hint">Or enter a member ID manually below</p>
+                  <form className="scanner-form" onSubmit={handleSubmit}>
+                    <label className="sr-only" htmlFor="member-id">Member ID</label>
+                    <input
+                      ref={inputRef}
+                      id="member-id"
+                      value={scanInput}
+                      onChange={(event) => setScanInput(event.target.value.toUpperCase())}
+                      onKeyDown={handleKeyDown}
+                      placeholder="GYM-000123"
+                      autoComplete="off"
+                      spellCheck="false"
+                      disabled={scannerState === "CHECKING"}
+                    />
+                    <button type="submit" disabled={scannerState === "CHECKING"}>CHECK ACCESS</button>
+                  </form>
+                  <div className="demo-codes" aria-label="Mock membership IDs">
+                    <span>TRY MOCK DATA</span>
+                    <button type="button" onClick={() => void submitScan("GYM-000123")}>GYM-000123 · ACTIVE</button>
+                    <button type="button" onClick={() => void submitScan("GYM-000124")}>GYM-000124 · EXPIRED</button>
+                  </div>
+                </div>
+              )}
+              {!isResult && cameraStarted && (
                 <div className="scanner-ready rise-in">
                   <div className="scanner-orbit" aria-hidden="true"><div /><div /><div /></div>
                   <p className="status-label">{scannerState === "CHECKING" ? "VERIFYING MEMBERSHIP" : "SCANNER READY"}</p>
@@ -379,9 +410,8 @@ export function ScannerTerminal() {
                   <p className="scanner-copy">
                     {scannerState === "CHECKING"
                       ? "Please wait a moment."
-                      : "Present your membership card to the scanner."}
+                      : cameraMessage || "Camera could not be started. Enter the code below."}
                   </p>
-
                   <form className="scanner-form" onSubmit={handleSubmit}>
                     <label className="sr-only" htmlFor="member-id">Member ID</label>
                     <input
@@ -398,8 +428,8 @@ export function ScannerTerminal() {
                     <button type="submit" disabled={scannerState === "CHECKING"}>CHECK ACCESS</button>
                   </form>
                   <div className="mobile-scan-tools">
-                    <button className="camera-button" type="button" onClick={() => void startCamera()} disabled={scannerState === "CHECKING"}>
-                      <ScanLine size={16} aria-hidden="true" /> START LIVE SCANNER
+                    <button className="camera-button" type="button" onClick={() => { setCameraStarted(false); void startCamera(); }} disabled={scannerState === "CHECKING"}>
+                      <ScanLine size={16} aria-hidden="true" /> RETRY CAMERA
                     </button>
                   </div>
                   <div className="demo-codes" aria-label="Mock membership IDs">
@@ -407,9 +437,12 @@ export function ScannerTerminal() {
                     <button type="button" onClick={() => void submitScan("GYM-000123")}>GYM-000123 · ACTIVE</button>
                     <button type="button" onClick={() => void submitScan("GYM-000124")}>GYM-000124 · EXPIRED</button>
                   </div>
-                  <p className="scanner-hint">Place the phone on a stand, tilt it toward the member’s card</p>
+                  <p className="scanner-hint">Place the phone on a stand, tilt it toward the member's card</p>
                 </div>
               )}
+              {isResult && resultCard}
+            </>
+          )}
               {isResult && resultCard}
             </>
           )}
