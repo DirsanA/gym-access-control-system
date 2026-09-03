@@ -315,46 +315,149 @@ export function ScannerTerminal() {
   const resultCard = (
     <>
       {scannerState === "ACCESS_GRANTED" && member && (
-        <div className="access-result access-result--granted rise-in">
-          <div className="result-icon" aria-hidden="true"><Check size={43} strokeWidth={2.4} /></div>
-          <p className="status-label">ACCESS GRANTED</p>
-          <Avatar member={member} />
-          <h2>{member.fullName}</h2>
-          <p className="member-id">{member.memberId}</p>
-          <span className="plan-badge">{member.membershipPlan}</span>
-          <p className="result-message">MEMBERSHIP ACTIVE</p>
-          <dl className="result-details">
-            <div><dt>VALID UNTIL</dt><dd>{formatMembershipDate(member.membershipEndDate)}</dd></div>
-            <div><dt>CHECK-IN TIME</dt><dd>{formatDateTime(new Date()).time}</dd></div>
-          </dl>
+        <div className="verify-card verify-card--granted rise-in">
+          <div className="verify-card__glow" aria-hidden="true" />
+          <div className="verify-card__header">
+            <div className="verify-card__status-pill verify-card__status-pill--granted">
+              <span className="verify-card__pulse" aria-hidden="true" />
+              <Check size={14} strokeWidth={3} aria-hidden="true" />
+              ACCESS GRANTED
+            </div>
+            <span className="verify-card__timestamp">{formatDateTime(new Date()).time}</span>
+          </div>
+
+          <div className="verify-card__body">
+            <div className="verify-card__identity">
+              <Avatar member={member} />
+              <div className="verify-card__name-block">
+                <h2>{member.fullName}</h2>
+                <p className="verify-card__mid">{member.memberId}</p>
+              </div>
+            </div>
+
+            <div className="verify-card__divider" aria-hidden="true" />
+
+            <div className="verify-card__plan-row">
+              <span className="verify-card__plan-badge">{member.membershipPlan}</span>
+              <span className="verify-card__active-badge">ACTIVE</span>
+            </div>
+
+            <dl className="verify-card__grid">
+              <div>
+                <dt>MEMBER SINCE</dt>
+                <dd>{formatMembershipDate(member.membershipStartDate)}</dd>
+              </div>
+              <div>
+                <dt>VALID UNTIL</dt>
+                <dd>{formatMembershipDate(member.membershipEndDate)}</dd>
+              </div>
+              <div>
+                <dt>CHECK-IN</dt>
+                <dd>{formatDateTime(new Date()).time}</dd>
+              </div>
+              <div>
+                <dt>LOCATION</dt>
+                <dd>Nairobi</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="verify-card__footer">
+            <Dumbbell size={14} aria-hidden="true" />
+            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+          </div>
         </div>
       )}
+
       {scannerState === "MEMBERSHIP_EXPIRED" && member && (
-        <div className="access-result access-result--expired rise-in">
-          <div className="result-icon" aria-hidden="true"><X size={43} strokeWidth={2.4} /></div>
-          <p className="status-label">MEMBERSHIP EXPIRED</p>
-          <Avatar member={member} />
-          <h2>{member.fullName}</h2>
-          <p className="member-id">{member.memberId}</p>
-          <dl className="result-details"><div><dt>EXPIRED ON</dt><dd>{formatMembershipDate(member.membershipEndDate)}</dd></div></dl>
-          <p className="renew-message">PLEASE RENEW YOUR MEMBERSHIP</p>
-          <p className="denied-label">ACCESS DENIED</p>
+        <div className="verify-card verify-card--expired rise-in">
+          <div className="verify-card__glow verify-card__glow--expired" aria-hidden="true" />
+          <div className="verify-card__header">
+            <div className="verify-card__status-pill verify-card__status-pill--expired">
+              <span className="verify-card__pulse verify-card__pulse--expired" aria-hidden="true" />
+              <X size={14} strokeWidth={3} aria-hidden="true" />
+              ACCESS DENIED
+            </div>
+          </div>
+
+          <div className="verify-card__body">
+            <div className="verify-card__identity">
+              <Avatar member={member} />
+              <div className="verify-card__name-block">
+                <h2>{member.fullName}</h2>
+                <p className="verify-card__mid">{member.memberId}</p>
+              </div>
+            </div>
+
+            <div className="verify-card__divider verify-card__divider--expired" aria-hidden="true" />
+
+            <div className="verify-card__plan-row">
+              <span className="verify-card__plan-badge verify-card__plan-badge--expired">{member.membershipPlan}</span>
+              <span className="verify-card__expired-badge">EXPIRED</span>
+            </div>
+
+            <dl className="verify-card__grid">
+              <div>
+                <dt>EXPIRED ON</dt>
+                <dd>{formatMembershipDate(member.membershipEndDate)}</dd>
+              </div>
+              <div>
+                <dt>STATUS</dt>
+                <dd className="verify-card__dd--muted">Please renew</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="verify-card__footer verify-card__footer--expired">
+            <TriangleAlert size={14} aria-hidden="true" />
+            <span>PLEASE RENEW YOUR MEMBERSHIP AT THE FRONT DESK</span>
+          </div>
         </div>
       )}
+
       {scannerState === "MEMBER_NOT_FOUND" && (
-        <div className="access-result access-result--missing rise-in">
-          <div className="result-icon" aria-hidden="true"><TriangleAlert size={38} strokeWidth={2.3} /></div>
-          <p className="status-label">MEMBER NOT FOUND</p>
-          <h2>This ID is not registered.</h2>
-          <p className="scanner-copy">Please contact a member of staff for assistance.</p>
+        <div className="verify-card verify-card--error rise-in">
+          <div className="verify-card__glow verify-card__glow--error" aria-hidden="true" />
+          <div className="verify-card__header">
+            <div className="verify-card__status-pill verify-card__status-pill--error">
+              <TriangleAlert size={14} strokeWidth={2.5} aria-hidden="true" />
+              NOT RECOGNIZED
+            </div>
+          </div>
+          <div className="verify-card__body verify-card__body--centered">
+            <div className="verify-card__error-icon" aria-hidden="true">
+              <TriangleAlert size={48} strokeWidth={1.8} />
+            </div>
+            <h2>Member Not Found</h2>
+            <p className="verify-card__copy">This ID is not registered in the system. Please check the code and try again, or contact staff for assistance.</p>
+            {scanInput && <p className="verify-card__scanned-id">Scanned: {scanInput}</p>}
+          </div>
+          <div className="verify-card__footer verify-card__footer--error">
+            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+          </div>
         </div>
       )}
+
       {scannerState === "ERROR" && (
-        <div className="access-result access-result--missing rise-in">
-          <div className="result-icon" aria-hidden="true"><TriangleAlert size={38} strokeWidth={2.3} /></div>
-          <p className="status-label">ACCESS CHECK UNAVAILABLE</p>
-          <h2>{result?.message ?? "Please try again."}</h2>
-          <p className="scanner-copy">The terminal will reset automatically.</p>
+        <div className="verify-card verify-card--error rise-in">
+          <div className="verify-card__glow verify-card__glow--error" aria-hidden="true" />
+          <div className="verify-card__header">
+            <div className="verify-card__status-pill verify-card__status-pill--error">
+              <TriangleAlert size={14} strokeWidth={2.5} aria-hidden="true" />
+              SYSTEM ERROR
+            </div>
+          </div>
+          <div className="verify-card__body verify-card__body--centered">
+            <div className="verify-card__error-icon" aria-hidden="true">
+              <TriangleAlert size={48} strokeWidth={1.8} />
+            </div>
+            <h2>Verification Unavailable</h2>
+            <p className="verify-card__copy">{result?.message ?? "The access system is temporarily unavailable."}</p>
+            <p className="verify-card__copy verify-card__copy--sub">The terminal will reset automatically.</p>
+          </div>
+          <div className="verify-card__footer verify-card__footer--error">
+            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+          </div>
         </div>
       )}
     </>
