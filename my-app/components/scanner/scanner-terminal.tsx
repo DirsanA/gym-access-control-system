@@ -443,9 +443,6 @@ export function ScannerTerminal() {
               {isResult && resultCard}
             </>
           )}
-              {isResult && resultCard}
-            </>
-          )}
         </div>
 
         <footer className="scanner-footer">
