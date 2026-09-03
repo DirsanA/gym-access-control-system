@@ -231,6 +231,7 @@ export function ScannerTerminal() {
       void scanContinuously();
     } catch {
       stopCamera();
+      setCameraStarted(false);
       setCameraMessage("Camera permission was not granted. You can still enter the member ID manually.");
     }
   }, [scanContinuously, stopCamera]);
