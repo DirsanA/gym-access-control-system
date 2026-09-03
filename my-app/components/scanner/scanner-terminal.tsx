@@ -116,6 +116,8 @@ export function ScannerTerminal() {
   const detectorRef = useRef<Detector | null>(null);
   const scannerStateRef = useRef(scannerState);
   scannerStateRef.current = scannerState;
+  const pendingStreamRef = useRef<MediaStream | null>(null);
+  const scanContinuouslyRef = useRef<() => void>(() => {});
 
   const focusInput = useCallback(() => {
     window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -207,6 +209,34 @@ export function ScannerTerminal() {
     cameraTimerRef.current = window.setTimeout(scanContinuously, FRAME_INTERVAL_MS);
   }, [submitScan]);
 
+  scanContinuouslyRef.current = scanContinuously;
+
+  useEffect(() => {
+    if (!cameraOn) return;
+    const video = videoRef.current;
+    const stream = pendingStreamRef.current ?? cameraStreamRef.current;
+    if (!video || !stream) return;
+    pendingStreamRef.current = null;
+    video.srcObject = stream;
+    video
+      .play()
+      .then(() => {
+        const DetectorClass = (window as DetectorWindow).BarcodeDetector;
+        detectorRef.current = DetectorClass
+          ? new DetectorClass({ formats: ["qr_code", "code_128", "code_39"] })
+          : null;
+        setCameraMessage(
+          detectorRef.current
+            ? "Live scanner ready"
+            : "Compatibility mode · scanning live"
+        );
+        scanContinuouslyRef.current();
+      })
+      .catch(() => {
+        setCameraMessage("Camera started but could not play the video feed.");
+      });
+  }, [cameraOn]);
+
   const startCamera = useCallback(async (): Promise<void> => {
     setCameraMessage("");
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -214,27 +244,25 @@ export function ScannerTerminal() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      cameraStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
-      const DetectorClass = (window as DetectorWindow).BarcodeDetector;
-      detectorRef.current = DetectorClass ? new DetectorClass({ formats: ["qr_code", "code_128", "code_39"] }) : null;
+      cameraStreamRef.current = stream;
+      pendingStreamRef.current = stream;
       setCameraOn(true);
       setCameraStarted(true);
-      setCameraMessage(detectorRef.current ? "Live scanner ready" : "Compatibility mode · scanning live");
-      void scanContinuously();
     } catch {
       stopCamera();
       setCameraStarted(false);
       setCameraMessage("Camera permission was not granted. You can still enter the member ID manually.");
     }
-  }, [scanContinuously, stopCamera]);
+  }, [stopCamera]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 1_000);
