@@ -70,11 +70,20 @@ function Avatar({ member }: { member: ScannerMember }) {
 
 function playTone(kind: "success" | "expired" | "error"): void {
   try {
+    if (kind === "success" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance("Granted");
+      utter.volume = 1;
+      utter.rate = 1.1;
+      utter.pitch = 1;
+      window.speechSynthesis.speak(utter);
+      return;
+    }
     const context = new window.AudioContext();
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    oscillator.frequency.value = kind === "success" ? 760 : kind === "expired" ? 280 : 180;
-    gain.gain.setValueAtTime(0.08, context.currentTime);
+    oscillator.frequency.value = kind === "expired" ? 280 : 180;
+    gain.gain.setValueAtTime(0.3, context.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.28);
     oscillator.connect(gain).connect(context.destination);
     oscillator.start();
