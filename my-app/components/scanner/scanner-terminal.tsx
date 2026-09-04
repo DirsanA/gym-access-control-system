@@ -70,13 +70,10 @@ function Avatar({ member }: { member: ScannerMember }) {
 
 function playTone(kind: "success" | "expired" | "error"): void {
   try {
-    if (kind === "success" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance("Granted");
-      utter.volume = 1;
-      utter.rate = 1.1;
-      utter.pitch = 1;
-      window.speechSynthesis.speak(utter);
+    if (kind === "success") {
+      const audio = new Audio("/soundCard.mp3");
+      audio.volume = 1;
+      void audio.play();
       return;
     }
     const context = new window.AudioContext();
