@@ -76,3 +76,15 @@ export function renewMember(memberId: string, days: number): GymMember | null {
   member.isActive = true;
   return member;
 }
+
+export function deleteMember(memberId: string): boolean {
+  const id = memberId.toUpperCase();
+  const member = membersById.get(id);
+  if (!member) return false;
+  const index = members.findIndex((m) => m.memberId === id);
+  if (index === -1) return false;
+  members.splice(index, 1);
+  membersById.delete(id);
+  membersByPhone.delete(member.phone);
+  return true;
+}
