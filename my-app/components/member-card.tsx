@@ -83,9 +83,9 @@ export function MemberCard({ member }: { member: CardMember }) {
     context.fill();
 
     // Top branding
-    context.fillStyle = "#c2f83a";
+    context.fillStyle = "#ff331e";
     context.font = "900 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    context.fillText("NEXUS ATHLETIC CLUB · NAIROBI", 110, 110);
+    context.fillText("DEBUG ATHLETIC CLUB · ADDIS ABABA, ETHIOPIA", 110, 110);
 
     context.fillStyle = "#ffffff";
     context.font = "900 68px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
@@ -203,7 +203,7 @@ export function MemberCard({ member }: { member: CardMember }) {
             <span className="member-card__brand-icon">
               <QrCode size={18} aria-hidden="true" />
             </span>
-            <span>NEXUS ATHLETIC CLUB · NAIROBI</span>
+            <span>DEBUG ATHLETIC CLUB · ADDIS ABABA, ETHIOPIA</span>
           </div>
 
           <p className="member-card__caption">VERIFIED ATHLETE ACCESS PASS</p>

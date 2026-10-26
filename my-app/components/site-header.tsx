@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/#schedule", label: "About us" },
-  { href: "/admin", label: "Service" },
-  { href: "/admin/members/new", label: "FAQ" },
+  { href: "/#about", label: "About Us" },
+  { href: "/#services", label: "Service" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export function SiteHeader() {
@@ -29,35 +29,36 @@ export function SiteHeader() {
     <>
       <header className="debug-nav-wrapper">
         <div className="debug-nav-capsule">
-          {/* Logo brand lockup: IB / Dumbbell inside oval pill */}
+          {/* Logo brand lockup: IB monogram / Dumbbell in circle */}
           <Link className="debug-nav-logo" href="/" onClick={close}>
             <span className="debug-nav-logo__badge">
-              <Dumbbell size={16} strokeWidth={2.4} />
+              <span className="debug-nav-logo__monogram">IB</span>
             </span>
             <span className="debug-nav-logo__name">DeBug</span>
           </Link>
 
           {/* Center Links */}
           <nav className="debug-nav-links" aria-label="Main navigation">
-            {navLinks.map(({ href, label }) => {
-              const active = pathname === href;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`debug-nav-item ${active ? "is-active" : ""}`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
+            <Link href="/" className={`debug-nav-item ${pathname === "/" ? "is-active" : ""}`}>
+              Home
+            </Link>
+            <a href="/#about" className="debug-nav-item">
+              About Us
+            </a>
+            <a href="/#services" className="debug-nav-item">
+              Service
+            </a>
+            <a href="/#faq" className="debug-nav-item">
+              FAQ
+            </a>
           </nav>
 
-          {/* Right Button: Sign up (Red Oval Capsule Button) */}
+          {/* Right Button: Sign Up */}
           <div className="debug-nav-cta-wrap">
             <Link className="debug-signup-btn" href="/admin/members/new">
-              Sign up
+              Sign Up
             </Link>
+
 
             <button
               className="debug-mobile-toggle"
@@ -70,6 +71,7 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
+
 
       {/* Mobile Menu Drawer */}
       <div

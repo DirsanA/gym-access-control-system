@@ -363,7 +363,7 @@ export function ScannerTerminal() {
               </div>
               <div>
                 <dt>LOCATION</dt>
-                <dd>Nairobi</dd>
+                <dd>Addis Ababa, Ethiopia</dd>
               </div>
             </dl>
           </div>

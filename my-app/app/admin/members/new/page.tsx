@@ -161,7 +161,7 @@ export default function NewMemberPage() {
                 minLength={5}
                 autoComplete="tel"
                 inputMode="tel"
-                placeholder="+254 700 000 000"
+                placeholder="+251 91 123 4567"
               />
             </label>
 

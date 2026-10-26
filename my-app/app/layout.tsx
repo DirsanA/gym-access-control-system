@@ -3,7 +3,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Nexus Athletic Club — Nairobi | Premium Fitness & Access Control",
+  title: "DeBug Athletic Club — Addis Ababa, Ethiopia | Premium Fitness & Access Control",
   description: "Next-generation athletic club, intelligent digital membership cards, and seamless contactless access scanner.",
 };
 

@@ -189,8 +189,8 @@ export function AdminMemberManager() {
       <section className="admin-console__hero">
         <div className="admin-console__hero-info">
           <div className="flex items-center gap-2 mb-2">
-            <span className="h-2 w-2 rounded-full bg-[#c2f83a] animate-pulse" />
-            <p className="admin-eyebrow">OPERATIONS CONTROL · NAIROBI HUB</p>
+            <span className="h-2 w-2 rounded-full bg-[#ff331e] animate-pulse" />
+            <p className="admin-eyebrow">OPERATIONS CONTROL · ADDIS ABABA HUB, ETHIOPIA</p>
           </div>
           <h1>
             Member <em>Console</em>
@@ -576,7 +576,7 @@ export function AdminMemberManager() {
                   name="phone"
                   minLength={5}
                   inputMode="tel"
-                  placeholder="+254 700 000 000"
+                  placeholder="+251 91 123 4567"
                   required
                   disabled={actionLoading}
                 />
