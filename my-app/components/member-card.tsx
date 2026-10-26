@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Printer, QrCode, Send, Share2 } from "lucide-react";
+import { Download, Printer, QrCode, Send, Share2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toDataURL } from "qrcode";
 import type { ScannerMember } from "@/types/scanner";
@@ -28,18 +28,28 @@ export function MemberCard({ member }: { member: CardMember }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void toDataURL(member.memberId, { width: 360, margin: 1, errorCorrectionLevel: "M", color: { dark: "#07100f", light: "#f6fbf7" } }).then(setQrDataUrl);
+    void toDataURL(member.memberId, {
+      width: 400,
+      margin: 1,
+      errorCorrectionLevel: "H",
+      color: { dark: "#060b09", light: "#ffffff" },
+    }).then(setQrDataUrl);
   }, [member.memberId]);
 
   const renderCard = useCallback(async (): Promise<HTMLCanvasElement> => {
     const canvas = document.createElement("canvas");
-    canvas.width = CARD_W; canvas.height = CARD_H;
+    canvas.width = CARD_W;
+    canvas.height = CARD_H;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Canvas not supported");
 
+    // Luxury Dark Gradient Background
     const gradient = context.createLinearGradient(0, 0, CARD_W, CARD_H);
-    gradient.addColorStop(0, "#0a221f"); gradient.addColorStop(0.52, "#123029"); gradient.addColorStop(1, "#0b1714");
-    context.fillStyle = gradient; context.fillRect(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#081310");
+    gradient.addColorStop(0.5, "#0e201b");
+    gradient.addColorStop(1, "#070c0b");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
     try {
       const athlete = await loadImage("/athlete-hero.png");
@@ -48,38 +58,87 @@ export function MemberCard({ member }: { member: CardMember }) {
       const targetW = targetH * sourceRatio;
       context.save();
       context.beginPath();
-      context.rect(CARD_W * 0.36, 0, CARD_W * 0.64, CARD_H);
+      context.rect(CARD_W * 0.38, 0, CARD_W * 0.62, CARD_H);
       context.clip();
-      context.drawImage(athlete, CARD_W - targetW * 0.62, (CARD_H - targetH) / 2, targetW, targetH);
-      context.fillStyle = "rgba(7,15,13,.34)";
-      context.fillRect(CARD_W * 0.36, 0, CARD_W * 0.64, CARD_H);
+      context.drawImage(athlete, CARD_W - targetW * 0.6, (CARD_H - targetH) / 2, targetW, targetH);
+      context.fillStyle = "rgba(7, 13, 11, 0.45)";
+      context.fillRect(CARD_W * 0.38, 0, CARD_W * 0.62, CARD_H);
       context.restore();
-    } catch { /* hero image is decorative only */ }
+    } catch {
+      /* hero image fallback */
+    }
 
-    const scrim = context.createLinearGradient(0, 0, CARD_W * 0.62, 0);
-    scrim.addColorStop(0, "rgba(10,34,31,.9)"); scrim.addColorStop(1, "rgba(12,29,25,0)");
-    context.fillStyle = scrim; context.fillRect(0, 0, CARD_W * 0.62, CARD_H);
+    // Scrim gradient for text contrast
+    const scrim = context.createLinearGradient(0, 0, CARD_W * 0.65, 0);
+    scrim.addColorStop(0, "rgba(8, 19, 16, 0.95)");
+    scrim.addColorStop(0.7, "rgba(8, 19, 16, 0.8)");
+    scrim.addColorStop(1, "rgba(8, 19, 16, 0)");
+    context.fillStyle = scrim;
+    context.fillRect(0, 0, CARD_W * 0.65, CARD_H);
 
-    context.fillStyle = "rgba(189,252,66,.11)"; context.beginPath(); context.arc(1120, 120, 380, 0, Math.PI * 2); context.fill();
-    context.fillStyle = "rgba(255,255,255,.06)"; context.beginPath(); context.arc(120, 900, 430, 0, Math.PI * 2); context.fill();
+    // Glowing accents
+    context.fillStyle = "rgba(194, 248, 58, 0.12)";
+    context.beginPath();
+    context.arc(1140, 110, 360, 0, Math.PI * 2);
+    context.fill();
 
-    context.fillStyle = "#bdfc42"; context.font = "900 25px Arial"; context.fillText("NEXUS ATHLETIC CLUB", 100, 100);
-    context.fillStyle = "#f6fbf7"; context.font = "900 64px Arial"; context.fillText("MEMBERSHIP CARD", 100, 180);
-    context.fillStyle = "rgba(246,251,247,.66)"; context.font = "700 22px Arial"; context.fillText("OFFICIAL MEMBER ACCESS", 100, 224);
-    context.strokeStyle = "#bdfc42"; context.lineWidth = 3; context.beginPath(); context.moveTo(100, 258); context.lineTo(600, 258); context.stroke();
+    // Top branding
+    context.fillStyle = "#c2f83a";
+    context.font = "900 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText("NEXUS ATHLETIC CLUB · NAIROBI", 110, 110);
 
-    context.fillStyle = "#f6fbf7"; context.font = "900 74px Arial"; context.fillText(member.fullName.toUpperCase().slice(0, 24), 100, 430);
-    context.fillStyle = "#bdfc42"; context.font = "900 34px Arial"; context.fillText(member.memberId, 100, 490);
+    context.fillStyle = "#ffffff";
+    context.font = "900 68px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText("ACCESS CARD", 110, 195);
 
-    context.fillStyle = "rgba(246,251,247,.74)"; context.font = "700 23px Arial"; context.fillText(member.membershipPlan.toUpperCase(), 100, 572);
-    context.fillText(`VALID UNTIL  ${cardDate(member.membershipEndDate).toUpperCase()}`, 100, 622);
+    context.fillStyle = "rgba(244, 247, 245, 0.6)";
+    context.font = "700 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText("OFFICIAL VERIFIED MEMBER PASS", 110, 240);
 
-    context.fillStyle = "#f6fbf7"; context.fillRect(1115, 215, 360, 440);
+    context.strokeStyle = "#c2f83a";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(110, 275);
+    context.lineTo(540, 275);
+    context.stroke();
+
+    // Member Name & ID
+    context.fillStyle = "#ffffff";
+    context.font = "900 72px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText(member.fullName.toUpperCase().slice(0, 22), 110, 440);
+
+    context.fillStyle = "#c2f83a";
+    context.font = "900 36px 'Courier New', monospace";
+    context.fillText(member.memberId, 110, 505);
+
+    // Plan & Expiry
+    context.fillStyle = "rgba(244, 247, 245, 0.75)";
+    context.font = "700 22px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText(member.membershipPlan.toUpperCase(), 110, 580);
+    context.fillText(`VALID THROUGH  ${cardDate(member.membershipEndDate).toUpperCase()}`, 110, 630);
+
+    // QR container box
+    context.fillStyle = "#ffffff";
+    context.roundRect ? context.roundRect(1100, 200, 390, 470, [24]) : context.fillRect(1100, 200, 390, 470);
+    context.fill();
+
     const qrImage = await loadImage(qrDataUrl);
-    context.drawImage(qrImage, 1148, 246, 294, 294);
-    context.fillStyle = "#07100f"; context.font = "900 22px Arial"; context.textAlign = "center"; context.fillText("SCAN TO VERIFY", 1295, 583); context.font = "700 19px Arial"; context.fillText(member.memberId, 1295, 618); context.textAlign = "start";
+    context.drawImage(qrImage, 1135, 235, 320, 320);
 
-    context.fillStyle = "rgba(246,251,247,.6)"; context.font = "700 20px Arial"; context.fillText("NEXUS ATHLETIC CLUB · NAIROBI", 100, 700);
+    context.fillStyle = "#081310";
+    context.font = "900 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.textAlign = "center";
+    context.fillText("SCAN AT TURNSTILE", 1295, 595);
+
+    context.fillStyle = "#334540";
+    context.font = "800 18px 'Courier New', monospace";
+    context.fillText(member.memberId, 1295, 630);
+    context.textAlign = "start";
+
+    // Bottom note
+    context.fillStyle = "rgba(244, 247, 245, 0.5)";
+    context.font = "700 18px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText("PRESENT TO OPTICAL SENSOR · POWERED BY NEXUS SECURITY", 110, 715);
 
     return canvas;
   }, [member, qrDataUrl]);
@@ -89,13 +148,20 @@ export function MemberCard({ member }: { member: CardMember }) {
     setBusy(true);
     try {
       const canvas = await renderCard();
-      const link = document.createElement("a"); link.download = `${member.memberId}-membership-card.png`; link.href = canvas.toDataURL("image/png"); link.click();
-    } finally { setBusy(false); }
+      const link = document.createElement("a");
+      link.download = `${member.memberId}-nexus-pass.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const cardBlob = useCallback(async (): Promise<Blob> => {
     const canvas = await renderCard();
-    return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Unable to create image"))), "image/png"));
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Unable to create image"))), "image/png")
+    );
   }, [renderCard]);
 
   async function shareCard() {
@@ -103,19 +169,25 @@ export function MemberCard({ member }: { member: CardMember }) {
     setBusy(true);
     try {
       const blob = await cardBlob();
-      const file = new File([blob], `${member.memberId}-membership-card.png`, { type: "image/png" });
-      const data = { files: [file], title: `${member.fullName} — Nexus Athletic Club`, text: `Nexus Athletic Club membership card\n${member.fullName} · ${member.memberId}\nValid until ${cardDate(member.membershipEndDate)}\n\nScan to verify.` };
+      const file = new File([blob], `${member.memberId}-pass.png`, { type: "image/png" });
+      const data = {
+        files: [file],
+        title: `${member.fullName} — Nexus Athletic Club Pass`,
+        text: `Nexus Athletic Club official membership pass\n${member.fullName} · ${member.memberId}\nValid until ${cardDate(member.membershipEndDate)}`,
+      };
       if (navigator.canShare && navigator.canShare(data)) {
         await navigator.share(data);
       } else {
         openTelegram();
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   function openTelegram() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `Nexus Athletic Club membership card\n${member.fullName} · ${member.memberId}\nValid until ${cardDate(member.membershipEndDate)}`;
+    const text = `Nexus Athletic Club Membership Pass\nMember: ${member.fullName}\nID: ${member.memberId}\nValid until: ${cardDate(member.membershipEndDate)}`;
     const share = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
     window.open(share, "_blank", "noopener,noreferrer");
   }
@@ -123,17 +195,77 @@ export function MemberCard({ member }: { member: CardMember }) {
   return (
     <section className="member-card-area" aria-label={`${member.fullName} membership card`}>
       <article className="member-card" id="printable-member-card">
-        <div className="member-card__glow member-card__glow--top" /><div className="member-card__glow member-card__glow--bottom" />
-        <div className="member-card__details"><div className="member-card__brand"><QrCode size={26} aria-hidden="true" /><span>NEXUS ATHLETIC CLUB</span></div><p className="member-card__caption">OFFICIAL MEMBER ACCESS</p><h2>{member.fullName}</h2><p className="member-card__id">{member.memberId}</p><div className="member-card__meta"><span>MEMBERSHIP<br /><strong>{member.membershipPlan}</strong></span><span>VALID UNTIL<br /><strong>{cardDate(member.membershipEndDate)}</strong></span></div><p className="member-card__footer">Present this card at the entrance</p></div>
-        <aside className="member-card__qr"><div>{qrDataUrl ? <img src={qrDataUrl} alt={`QR code containing ${member.memberId}`} /> : <span>GENERATING QR…</span>}</div><strong>SCAN TO VERIFY</strong><small>{member.memberId}</small></aside>
+        <div className="member-card__glow member-card__glow--top" />
+        <div className="member-card__glow member-card__glow--bottom" />
+
+        <div className="member-card__details">
+          <div className="member-card__brand">
+            <span className="member-card__brand-icon">
+              <QrCode size={18} aria-hidden="true" />
+            </span>
+            <span>NEXUS ATHLETIC CLUB · NAIROBI</span>
+          </div>
+
+          <p className="member-card__caption">VERIFIED ATHLETE ACCESS PASS</p>
+          <h2 title={member.fullName}>{member.fullName}</h2>
+          <p className="member-card__id">{member.memberId}</p>
+
+          <div className="member-card__meta">
+            <div>
+              <span>PLAN</span>
+              <strong>{member.membershipPlan}</strong>
+            </div>
+            <div>
+              <span>VALID THROUGH</span>
+              <strong>{cardDate(member.membershipEndDate)}</strong>
+            </div>
+          </div>
+
+          <p className="member-card__footer">
+            <Sparkles size={13} className="inline mr-1 text-[#c2f83a]" />
+            Hold QR code before the optical entrance turnstile
+          </p>
+        </div>
+
+        <aside className="member-card__qr">
+          <div className="member-card__qr-box">
+            {qrDataUrl ? (
+              <img src={qrDataUrl} alt={`QR code containing ${member.memberId}`} />
+            ) : (
+              <span className="text-xs font-semibold text-gray-500">SYNCING QR...</span>
+            )}
+          </div>
+          <strong className="member-card__qr-title">SCAN TO VERIFY</strong>
+          <small className="member-card__qr-id">{member.memberId}</small>
+        </aside>
       </article>
+
       <div className="member-card__actions">
-        <button type="button" onClick={() => window.print()}><Printer size={16} /> PRINT CARD</button>
-        <button type="button" onClick={downloadCard} disabled={!qrDataUrl || busy}><Download size={16} /> DOWNLOAD PNG</button>
-        <button type="button" onClick={() => void shareCard()} disabled={!qrDataUrl || busy}><Share2 size={16} /> SHARE CARD</button>
-        <button type="button" onClick={openTelegram}><Send size={16} /> TELEGRAM</button>
+        <button type="button" className="card-action-btn card-action-btn--primary" onClick={downloadCard} disabled={!qrDataUrl || busy}>
+          <Download size={15} />
+          <span>{busy ? "PREPARING..." : "DOWNLOAD PASS"}</span>
+        </button>
+
+        <button type="button" className="card-action-btn" onClick={() => window.print()}>
+          <Printer size={15} />
+          <span>PRINT</span>
+        </button>
+
+        <button type="button" className="card-action-btn" onClick={() => void shareCard()} disabled={!qrDataUrl || busy}>
+          <Share2 size={15} />
+          <span>SHARE PASS</span>
+        </button>
+
+        <button type="button" className="card-action-btn" onClick={openTelegram}>
+          <Send size={15} />
+          <span>TELEGRAM</span>
+        </button>
       </div>
-      <p className="member-card__note">The QR code contains <strong>{member.memberId}</strong>. Scanning it opens the entrance check and shows this member’s verification result. Sharing lets a member keep their card on Telegram, WhatsApp or any app.</p>
+
+      <p className="member-card__note">
+        This pass grants direct contactless entry. Scanning it at the member scanner checks your expiration date in real-time.
+      </p>
     </section>
   );
 }
+
