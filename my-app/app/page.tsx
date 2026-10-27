@@ -42,7 +42,7 @@ export default function Home() {
               </p>
 
               <div className="debug-hero__actions">
-                <Link href="/admin/members/new" className="debug-btn-primary">
+                <Link href="/register" className="debug-btn-primary">
                   Get Started
                 </Link>
 
@@ -95,7 +95,7 @@ export default function Home() {
                   <div className="debug-solid-stat__body">
                     <div className="flex items-start justify-between">
                       <b className="debug-solid-stat__number">25K+</b>
-                      <Link href="/admin" className="debug-stat-arrow" aria-label="Open members directory">
+                      <Link href="/profile" className="debug-stat-arrow" aria-label="Open member portal">
                         <ArrowUpRight size={17} />
                       </Link>
                     </div>
@@ -173,7 +173,7 @@ export default function Home() {
               </div>
 
               <div className="pt-4">
-                <Link href="/admin/members/new" className="debug-btn-primary">
+                <Link href="/register" className="debug-btn-primary">
                   <span>Join The Movement</span>
                   <ArrowRight size={16} />
                 </Link>
@@ -263,7 +263,7 @@ export default function Home() {
               <h3>Instant Digital Pass Sharing</h3>
               <p>Export your verified member pass to Apple Wallet, Telegram, WhatsApp, or printable PNG with auto-expiry calculation.</p>
               <div className="debug-service-card__footer">
-                <Link href="/admin/members/new" className="debug-service-card__link">
+                <Link href="/profile" className="debug-service-card__link">
                   Generate Member Pass <ArrowRight size={14} />
                 </Link>
               </div>
@@ -307,7 +307,7 @@ export default function Home() {
               <div className="debug-faq-contact-card">
                 <h4>Have more questions?</h4>
                 <p>Our team is on standby 24/7 to assist with registration and access tokens.</p>
-                <Link href="/admin/members/new" className="debug-btn-primary mt-4">
+                <Link href="/login" className="debug-btn-primary mt-4">
                   Register Today
                 </Link>
               </div>
@@ -389,7 +389,7 @@ export default function Home() {
           <div className="debug-footer__col">
             <h3>ACCESS TOOLS</h3>
             <Link href="/scanner">Entrance Scanner Terminal</Link>
-            <Link href="/admin/members/new">New Member Registration</Link>
+            <Link href="/register">New Member Registration</Link>
             <Link href="/admin">Operations Console</Link>
           </div>
 
@@ -398,7 +398,7 @@ export default function Home() {
             <p>ADDIS ABABA &bull; ETHIOPIA</p>
             <p className="mt-1">MON — SUN &bull; 05:00 - 23:00</p>
             <div className="mt-4">
-              <Link href="/admin/members/new" className="debug-signup-btn text-xs">
+              <Link href="/register" className="debug-signup-btn text-xs">
                 Join Elite Fitness
               </Link>
             </div>

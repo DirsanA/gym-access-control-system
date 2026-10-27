@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
-import { ArrowLeft, Check, CreditCard, QrCode, ScanLine, Sparkles, UserPlus } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Check, CreditCard, QrCode, ScanLine, ShieldAlert, Sparkles, UserPlus } from "lucide-react";
 import { MemberCard } from "@/components/member-card";
 import type { ScannerMember } from "@/types/scanner";
 
@@ -19,10 +19,29 @@ function endDateFor(startDate: string, months: "1" | "3"): string {
 }
 
 export default function NewMemberPage() {
+  const [authChecking, setAuthChecking] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<CreateMemberResponse["member"]>();
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    async function checkAdmin() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (!res.ok || !data.authenticated || data.user?.role !== "admin") {
+          setUnauthorized(true);
+        }
+      } catch {
+        setUnauthorized(true);
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+    void checkAdmin();
+  }, []);
   const [duration, setDuration] = useState<"1" | "3">("1");
   const endDate = useMemo(() => endDateFor(startDate, duration), [startDate, duration]);
 
@@ -61,6 +80,47 @@ export default function NewMemberPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (authChecking) {
+    return (
+      <main className="min-h-screen bg-[#040405] pt-32 pb-20 px-4 flex items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#ff331e] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-gray-400">Verifying administrative access...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (unauthorized) {
+    return (
+      <main className="min-h-screen bg-[#040405] pt-32 pb-20 px-4 flex items-center justify-center text-white">
+        <div className="rounded-3xl border border-red-500/20 bg-[#0d0d10] p-8 text-center max-w-md space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto">
+            <ShieldAlert size={28} />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Access Denied</h1>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Administrative privileges required to register members directly from the staff portal. Please sign in with an authorized account.
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#ff331e] hover:bg-[#ff4733] text-white text-xs font-bold shadow-lg text-center transition-all"
+            >
+              Sign In to Admin Portal
+            </Link>
+            <Link
+              href="/profile"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-gray-300 text-xs font-semibold text-center transition-colors"
+            >
+              Back to Member Portal
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

@@ -1,8 +1,8 @@
 import { ScannerTerminal } from "@/components/scanner/scanner-terminal";
 
 export const metadata = {
-  title: "Member Access | Nexus Athletic Club",
-  description: "Gym entrance membership verification terminal.",
+  title: "Turnstile Gate Scanner | Elite Fitness Club",
+  description: "Contactless optical QR scanner terminal for turnstile admission at Elite Fitness Addis Ababa.",
 };
 
 export default function ScannerPage() {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { ArrowLeft, CheckCircle2, Dumbbell, KeyRound, Lock, Mail, Phone, RefreshCw, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Dumbbell, Eye, EyeOff, KeyRound, Lock, Mail, Phone, RefreshCw, ShieldCheck, User } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +15,8 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("+251 ");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [gender, setGender] = useState("MALE");
 
   // Flow states: 1 = Register form, 2 = OTP verification screen
@@ -214,7 +216,7 @@ export default function RegisterPage() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="alex@example.com"
+                        placeholder="example@gmail.com"
                         className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
                       />
                     </div>
@@ -242,13 +244,21 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-3 text-gray-500 hover:text-gray-300 transition-colors focus:outline-none"
+                        aria-label="Toggle password visibility"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
 
@@ -257,13 +267,21 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3.5 top-3 text-gray-500 hover:text-gray-300 transition-colors focus:outline-none"
+                        aria-label="Toggle confirm password visibility"
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -25,6 +25,8 @@ export function hashString(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+export const hashOTP = hashString;
+
 export function generateOpaqueToken(prefix = "TKT"): string {
   const randomBytes = crypto.randomBytes(16).toString("hex");
   return `${prefix}-${randomBytes}`;
