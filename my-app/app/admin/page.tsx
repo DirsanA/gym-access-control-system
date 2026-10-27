@@ -162,39 +162,39 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#040405] pt-24 pb-20 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen bg-[#040405] pt-20 sm:pt-24 pb-20 px-3 sm:px-6 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Admin Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-[#ff331e] animate-pulse" />
               <span className="text-xs font-mono font-bold text-[#ff4733]">OPERATIONS CONSOLE &bull; ADDIS ABABA</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Elite Fitness Administration</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Elite Fitness Administration</h1>
             <p className="text-xs text-gray-400 mt-1">
               Manage member records, record cash revenues, audit turnstile scanner logs, and oversee passes.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => setCashModalOpen(true)}
-              className="px-4 py-2.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-bold text-emerald-400 transition-all flex items-center gap-1.5"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-bold text-emerald-400 transition-all flex items-center gap-1.5"
             >
               <Banknote size={15} />
               <span>Record Cash Payment</span>
             </button>
             <Link
               href="/scanner"
-              className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-white transition-all flex items-center gap-1.5"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-white transition-all flex items-center gap-1.5"
             >
               <ScanLine size={15} />
               <span>Scanner Terminal</span>
             </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2.5 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-bold text-red-400 transition-all flex items-center gap-1.5"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-bold text-red-400 transition-all flex items-center gap-1.5"
             >
               <LogOut size={15} />
               <span>Exit Admin</span>
@@ -203,10 +203,10 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+        <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === "overview"
                 ? "bg-[#ff331e] text-white shadow-[0_2px_12px_rgba(255,51,30,0.4)]"
                 : "text-gray-400 hover:text-white"
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
           </button>
           <button
             onClick={() => setActiveTab("members")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === "members"
                 ? "bg-[#ff331e] text-white shadow-[0_2px_12px_rgba(255,51,30,0.4)]"
                 : "text-gray-400 hover:text-white"
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
           </button>
           <button
             onClick={() => setActiveTab("scans")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === "scans"
                 ? "bg-[#ff331e] text-white shadow-[0_2px_12px_rgba(255,51,30,0.4)]"
                 : "text-gray-400 hover:text-white"
@@ -426,8 +426,8 @@ export default function AdminDashboardPage() {
 
         {/* CASH RECORDING MODAL */}
         {cashModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-md rounded-3xl border border-white/15 bg-[#121216] p-7 shadow-2xl relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-md max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#121216] p-5 sm:p-7 shadow-2xl relative">
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <Banknote size={20} className="text-emerald-400" />

@@ -184,7 +184,7 @@ export function AdminMemberManager() {
   }
 
   return (
-    <main className="admin-console">
+    <div className="admin-console-wrapper w-full">
       {/* Top Hero / Metrics Header */}
       <section className="admin-console__hero">
         <div className="admin-console__hero-info">
@@ -561,7 +561,7 @@ export function AdminMemberManager() {
             <p>Issue an entrance pass immediately without leaving the operations console.</p>
 
             <div className="admin-registration__grid">
-              <label className="field-group md:col-span-2">
+              <label className="field-group sm:col-span-2">
                 <span className="field-label">FULL NAME</span>
                 <input
                   className="modern-input"
@@ -622,7 +622,7 @@ export function AdminMemberManager() {
                 />
               </label>
 
-              <div className="field-group md:col-span-2 validity-preview">
+              <div className="field-group sm:col-span-2 validity-preview">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="field-label">Calculated Expiry Date</span>
@@ -651,7 +651,7 @@ export function AdminMemberManager() {
           </form>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
