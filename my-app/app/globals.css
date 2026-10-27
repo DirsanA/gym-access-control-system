@@ -581,19 +581,20 @@ html {
   bottom: 0;
   width: 65%;
   background-image: url("/hero-athlete.png");
-  background-position: center top;
+  background-position: right top;
   background-repeat: no-repeat;
   background-size: cover;
   pointer-events: none;
   z-index: 1;
+  opacity: 0.95;
 }
 
 /* Multi-layer scrim for seamless text legibility and gradient fade into pure black */
 .debug-bg-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #020202 0%, #020202 42%, rgba(2, 2, 2, 0.82) 58%, rgba(2, 2, 2, 0.3) 78%, rgba(2, 2, 2, 0) 100%),
-              linear-gradient(0deg, #020202 0%, transparent 22%);
+  background: linear-gradient(90deg, #020202 0%, rgba(2, 2, 2, 0.92) 35%, rgba(2, 2, 2, 0.65) 60%, rgba(2, 2, 2, 0.25) 85%, rgba(2, 2, 2, 0.1) 100%),
+              linear-gradient(0deg, #020202 0%, rgba(2, 2, 2, 0.7) 15%, transparent 40%);
   z-index: 2;
   pointer-events: none;
 }
@@ -840,7 +841,13 @@ html {
   }
   .debug-bg-athlete {
     width: 100%;
-    opacity: 0.38;
+    opacity: 0.65;
+    background-position: 80% top;
+    background-size: cover;
+  }
+  .debug-bg-scrim {
+    background: linear-gradient(180deg, rgba(2, 2, 2, 0.45) 0%, rgba(2, 2, 2, 0.8) 50%, #020202 100%),
+                linear-gradient(90deg, rgba(2, 2, 2, 0.85) 0%, rgba(2, 2, 2, 0.4) 60%, transparent 100%);
   }
   .debug-hero__content {
     max-width: 100%;
@@ -850,19 +857,29 @@ html {
 @media (max-width: 580px) {
   .debug-screen-frame {
     padding: 4px;
+    min-height: auto;
   }
   .debug-inner-card {
     border-radius: 20px;
-    padding: 95px 14px 34px;
+    padding: 85px 16px 28px;
+    min-height: auto;
+  }
+  .debug-bg-athlete {
+    width: 100%;
+    opacity: 0.72;
+    background-position: 75% 20%;
+    background-size: cover;
   }
   .debug-hero__title {
-    font-size: 38px;
+    font-size: 36px;
     line-height: 1.1;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
   }
   .debug-hero__desc {
     font-size: 13px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
   }
   .debug-hero__actions {
     flex-direction: row;
@@ -880,7 +897,7 @@ html {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
-    margin-top: 36px;
+    margin-top: 28px;
     gap: 12px;
   }
   .debug-glass-reviews {
@@ -1783,9 +1800,15 @@ html {
 
 .debug-section {
   position: relative;
-  padding: clamp(90px, 12vw, 140px) 24px;
+  padding: clamp(50px, 7vw, 95px) 24px;
   background: #020202;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .debug-section {
+    padding: 38px 16px;
+  }
 }
 
 .debug-section--tint {
