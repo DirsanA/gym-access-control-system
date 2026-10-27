@@ -130,7 +130,7 @@ export function PhotoIdUploader({
     }
   }
 
-  // Save photo to API
+  // Save photo to API via Cloudinary
   async function handleSavePhoto() {
     if (!previewDataUrl) return;
     setSaving(true);
@@ -142,8 +142,9 @@ export function PhotoIdUploader({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setPhotoUrl(previewDataUrl);
-        onPhotoSaved(previewDataUrl);
+        const savedUrl = data.user?.photoUrl || previewDataUrl;
+        setPhotoUrl(savedUrl);
+        onPhotoSaved(savedUrl);
         setModalOpen(false);
         stopCamera();
         setPreviewDataUrl(null);
@@ -334,7 +335,7 @@ export function PhotoIdUploader({
                     className="w-full py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm shadow-[0_4px_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {saving ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                    <span>{saving ? "Saving Member ID..." : "Confirm & Save Photo"}</span>
+                    <span>{saving ? "Uploading to Cloudinary & Saving..." : "Confirm & Save Photo"}</span>
                   </button>
 
                   <div className="flex gap-2">
@@ -391,8 +392,9 @@ export function PhotoIdUploader({
               />
             </div>
 
-            <p className="text-[11px] text-gray-500 text-center">
-              Selfie photos are encrypted and used solely for turnstile entrance & cashier identification.
+            <p className="text-[11px] text-gray-400 text-center flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Cloudinary CDN Secured &bull; Authenticated for Turnstiles &amp; Cashier Matching</span>
             </p>
           </div>
         </div>

@@ -28,6 +28,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Please verify your email before purchasing a plan." }, { status: 403 });
     }
 
+    if (user.role !== "admin" && !user.photoUrl) {
+      return NextResponse.json(
+        {
+          success: false,
+          photoRequired: true,
+          message: "A clear portrait photo ID is required before purchasing a membership pass. Entrance attendants and optical gate turnstiles visually verify your face upon entry.",
+        },
+        { status: 400 }
+      );
+    }
+
     const plan = await Plan.findById(planId);
     if (!plan || !plan.isActive) {
       return NextResponse.json({ success: false, message: "Selected membership plan is currently unavailable." }, { status: 404 });

@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db/mongodb";
+import { uploadMemberPhotoToCloudinary } from "@/lib/cloudinary";
 import { Payment, Plan, Subscription, Ticket, User } from "@/lib/models";
 import { NextResponse } from "next/server";
 
@@ -103,7 +104,21 @@ export async function PATCH(request: Request) {
     if (typeof fullName === "string" && fullName.trim()) user.fullName = fullName.trim();
     if (typeof phone === "string" && phone.trim()) user.phone = phone.trim();
     if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) user.gender = gender;
-    if (typeof photoUrl === "string") user.photoUrl = photoUrl;
+    
+    if (typeof photoUrl === "string" && photoUrl.trim()) {
+      let finalUrl = photoUrl.trim();
+      // If photo is a base64 data URI from selfie camera or file picker, upload to Cloudinary
+      if (finalUrl.startsWith("data:image/")) {
+        const uploadResult = await uploadMemberPhotoToCloudinary(
+          finalUrl,
+          user.memberId || user.username || user._id.toString()
+        );
+        if (uploadResult.success && uploadResult.url) {
+          finalUrl = uploadResult.url;
+        }
+      }
+      user.photoUrl = finalUrl;
+    }
 
     await user.save();
 

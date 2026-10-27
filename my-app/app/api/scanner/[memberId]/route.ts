@@ -48,7 +48,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
             membershipPlan: "Suspended",
             membershipStartDate: todayStr,
             membershipEndDate: todayStr,
-            profileImage: null,
+            profileImage: user.photoUrl || null,
           },
         },
         { status: 403 }
@@ -66,7 +66,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
       membershipPlan: subscription?.planName || "No Active Plan",
       membershipStartDate: subscription ? subscription.startDate.toISOString().slice(0, 10) : todayStr,
       membershipEndDate: subscription ? subscription.endDate.toISOString().slice(0, 10) : todayStr,
-      profileImage: null,
+      profileImage: user.photoUrl || null,
     };
 
     if (!subscription || subscription.endDate < today) {
