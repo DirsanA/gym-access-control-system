@@ -30,6 +30,7 @@ export async function GET() {
         gender: user.gender,
         role: user.role,
         memberId: user.memberId,
+        photoUrl: user.photoUrl,
         isVerified: user.isVerified,
         isSuspended: user.isSuspended,
       },

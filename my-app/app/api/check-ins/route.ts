@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       membershipPlan: subscription?.planName || "No Active Plan",
       membershipStartDate: subscription ? subscription.startDate.toISOString().slice(0, 10) : todayStr,
       membershipEndDate: subscription ? subscription.endDate.toISOString().slice(0, 10) : todayStr,
-      profileImage: null,
+      profileImage: user.photoUrl || null,
     };
 
     if (!subscription || subscription.endDate < today) {

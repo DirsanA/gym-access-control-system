@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isVerified: boolean;
   isSuspended: boolean;
   memberId?: string; // GYM-000123 format when member pass or subscription is granted
+  photoUrl?: string; // Member portrait face photo for turnstile/cashier verification
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +71,10 @@ const UserSchema = new Schema<IUser>(
       type: String,
       unique: true,
       sparse: true,
+      trim: true,
+    },
+    photoUrl: {
+      type: String,
       trim: true,
     },
   },

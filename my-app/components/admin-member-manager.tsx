@@ -308,12 +308,17 @@ export function AdminMemberManager() {
               return (
                 <article key={member.memberId} className="admin-member">
                   <div className="admin-member__identity">
-                    <div className="admin-member__avatar">
-                      {member.fullName
-                        .split(" ")
-                        .map((part) => part[0])
-                        .slice(0, 2)
-                        .join("")}
+                    <div className="admin-member__avatar overflow-hidden">
+                      {member.profileImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={member.profileImage} alt={member.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        member.fullName
+                          .split(" ")
+                          .map((part) => part[0])
+                          .slice(0, 2)
+                          .join("")
+                      )}
                     </div>
                     <div className="admin-member__info">
                       <b>{member.fullName}</b>

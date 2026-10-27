@@ -1,22 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Dumbbell, Menu, QrCode, ScanLine, X } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { ArrowUpRight, Dumbbell, LogOut, Menu, QrCode, Shield, User, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/#about", label: "About Us" },
-  { href: "/#services", label: "Service" },
-  { href: "/#faq", label: "FAQ" },
-];
+interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  fullName?: string;
+  role: "customer" | "admin";
+  memberId?: string;
+  photoUrl?: string;
+}
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const isHome = pathname === "/";
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
   const close = () => setOpen(false);
+
+  // Check auth session
+  useEffect(() => {
+    let isMounted = true;
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json.authenticated && json.user) {
+            setCurrentUser(json.user);
+          } else if (isMounted) {
+            setCurrentUser(null);
+          }
+        } else if (isMounted) {
+          setCurrentUser(null);
+        }
+      } catch {
+        if (isMounted) setCurrentUser(null);
+      } finally {
+        if (isMounted) setAuthChecked(true);
+      }
+    }
+
+    void checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -24,6 +60,27 @@ export function SiteHeader() {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setCurrentUser(null);
+      close();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      router.push("/login");
+    }
+  }
+
+  const displayName = currentUser?.fullName || currentUser?.username || "Athlete";
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <>
@@ -53,15 +110,70 @@ export function SiteHeader() {
             </a>
           </nav>
 
-          {/* Right Button: Sign Up / Profile */}
+          {/* Right Action: Signed In Profile Capsule vs Sign In / Sign Up */}
           <div className="debug-nav-cta-wrap">
-            <Link className="debug-nav-item" href="/login">
-              Sign In
-            </Link>
-            <Link className="debug-signup-btn" href="/register">
-              Sign Up
-            </Link>
+            {authChecked && currentUser ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/profile"
+                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all ${
+                    pathname === "/profile"
+                      ? "bg-[#ff331e]/20 border-[#ff331e]/50 shadow-[0_0_15px_rgba(255,51,30,0.3)]"
+                      : "bg-white/5 hover:bg-white/10 border-white/15"
+                  }`}
+                  title="View Member Profile & Pass"
+                >
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-[#ff331e] border border-white/20 flex items-center justify-center text-xs font-black text-white shrink-0">
+                    {currentUser.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={currentUser.photoUrl} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{userInitials}</span>
+                    )}
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left">
+                    <span className="text-xs font-bold text-white leading-tight max-w-[110px] truncate">
+                      {displayName}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {currentUser.role === "admin" ? "ADMIN" : currentUser.memberId || "MEMBER"}
+                    </span>
+                  </div>
+                </Link>
 
+                {currentUser.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 transition-all"
+                  >
+                    <Shield size={12} />
+                    <span>Admin</span>
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="hidden md:inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOut size={15} />
+                </button>
+              </div>
+            ) : authChecked ? (
+              <>
+                <Link className="debug-nav-item" href="/login">
+                  Sign In
+                </Link>
+                <Link className="debug-signup-btn" href="/register">
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <div className="w-24 h-8" />
+            )}
 
             <button
               className="debug-mobile-toggle"
@@ -74,7 +186,6 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-
 
       {/* Mobile Menu Drawer */}
       <div
@@ -100,17 +211,46 @@ export function SiteHeader() {
             </button>
           </div>
 
+          {/* User Profile Card in Mobile Menu if signed in */}
+          {currentUser && (
+            <div className="px-5 pt-3">
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-[#ff331e] border border-white/30 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                    {currentUser.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={currentUser.photoUrl} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{userInitials}</span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">{displayName}</div>
+                    <div className="text-xs text-gray-400 font-mono">
+                      {currentUser.memberId || currentUser.email}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                  {currentUser.role === "admin" ? "ADMIN" : "VERIFIED"}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="app-header__menu-body">
-            <div className="app-header__menu-section-label">MENU</div>
+            <div className="app-header__menu-section-label">NAVIGATION</div>
             <div className="app-header__menu-links">
               {[
                 { href: "/", label: "Home", sub: "Hero & Overview" },
                 { href: "/#about", label: "About Us", sub: "Legacy & Facilities" },
                 { href: "/#services", label: "Services", sub: "Training & Turnstile QR" },
                 { href: "/#faq", label: "FAQ", sub: "Questions & Access" },
-                { href: "/profile", label: "Member Profile", sub: "Subscriptions & Digital Card" },
+                { href: "/profile", label: "Member Profile", sub: "Subscriptions & Digital Pass" },
                 { href: "/scanner", label: "Entrance Scanner", sub: "Turnstile Live Check-in" },
-                { href: "/admin", label: "Admin Console", sub: "Management & Operations" },
+                ...(currentUser?.role === "admin"
+                  ? [{ href: "/admin", label: "Admin Console", sub: "Management & Operations" }]
+                  : []),
               ].map(({ href, label, sub }, i) => {
                 const active = pathname === href;
                 return (
@@ -135,19 +275,43 @@ export function SiteHeader() {
           </div>
 
           <div className="app-header__menu-foot">
-            <Link
-              href="/register"
-              onClick={close}
-              className="app-header__menu-cta"
-            >
-              <span>Sign Up / Register Member</span>
-              <ArrowUpRight size={16} />
-            </Link>
-            <div className="mt-2 text-center">
-              <Link href="/login" onClick={close} className="text-xs text-gray-400 hover:text-white">
-                Already registered? <span className="text-[#ff331e] font-bold">Sign In</span>
-              </Link>
-            </div>
+            {currentUser ? (
+              <div className="space-y-2">
+                <Link
+                  href="/profile"
+                  onClick={close}
+                  className="app-header__menu-cta"
+                >
+                  <QrCode size={16} />
+                  <span>Open Digital Entrance Pass</span>
+                  <ArrowUpRight size={16} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full py-2.5 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                >
+                  <LogOut size={14} />
+                  <span>Sign Out of Account</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  onClick={close}
+                  className="app-header__menu-cta"
+                >
+                  <span>Sign Up / Register Member</span>
+                  <ArrowUpRight size={16} />
+                </Link>
+                <div className="mt-2 text-center">
+                  <Link href="/login" onClick={close} className="text-xs text-gray-400 hover:text-white">
+                    Already registered? <span className="text-[#ff331e] font-bold">Sign In</span>
+                  </Link>
+                </div>
+              </>
+            )}
             <div className="app-header__menu-meta">
               <span>ADDIS ABABA, ETHIOPIA</span>
               <span>•</span>
@@ -159,5 +323,3 @@ export function SiteHeader() {
     </>
   );
 }
-
-

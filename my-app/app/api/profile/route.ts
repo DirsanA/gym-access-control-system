@@ -50,7 +50,7 @@ export async function GET() {
             membershipPlan: activeSubscription.planName,
             membershipStartDate: activeSubscription.startDate.toISOString().slice(0, 10),
             membershipEndDate: activeSubscription.endDate.toISOString().slice(0, 10),
-            profileImage: null,
+            profileImage: user.photoUrl || null,
             ticketToken: ticket?.ticketToken,
             qrPayload: ticket?.qrPayload || ticket?.ticketToken || user.memberId,
           }
@@ -67,6 +67,7 @@ export async function GET() {
         gender: user.gender,
         role: user.role,
         memberId: user.memberId,
+        photoUrl: user.photoUrl,
         isVerified: user.isVerified,
         isSuspended: user.isSuspended,
       },
@@ -91,7 +92,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json().catch(() => null);
-    const { fullName, phone, gender } = body || {};
+    const { fullName, phone, gender, photoUrl } = body || {};
 
     await connectDB();
     const user = await User.findById(session.userId);
@@ -99,9 +100,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 
-    if (fullName) user.fullName = fullName.trim();
-    if (phone) user.phone = phone.trim();
+    if (typeof fullName === "string" && fullName.trim()) user.fullName = fullName.trim();
+    if (typeof phone === "string" && phone.trim()) user.phone = phone.trim();
     if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) user.gender = gender;
+    if (typeof photoUrl === "string") user.photoUrl = photoUrl;
 
     await user.save();
 
@@ -116,6 +118,7 @@ export async function PATCH(request: Request) {
         fullName: user.fullName,
         gender: user.gender,
         memberId: user.memberId,
+        photoUrl: user.photoUrl,
       },
     });
   } catch (error: any) {

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     console.log(`[VERIFY_OTP SUCCESS] Correct OTP code verified for: ${normalizedEmail}!`);
     console.log("[VERIFY_OTP] Creating verified user record in 'users' collection...");
     // Now create the verified User in the User collection
-    let user = await User.findOne({ email: normalizedEmail });
+    let user: any = await User.findOne({ email: normalizedEmail });
 
     if (!user && otpRecord.registrationData) {
       const reg = otpRecord.registrationData;
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
         email: normalizedEmail,
         phone: reg.phone,
         fullName: reg.fullName,
-        gender: reg.gender,
+        gender: (reg.gender as "MALE" | "FEMALE" | "OTHER") || undefined,
         passwordHash: reg.passwordHash,
         role: "customer",
         isVerified: true,

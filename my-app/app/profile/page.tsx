@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
+  Camera,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -18,12 +19,15 @@ import {
   Phone,
   QrCode,
   RefreshCw,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   User,
+  X,
   Zap,
 } from "lucide-react";
 import { MemberCard } from "@/components/member-card";
+import { PhotoIdUploader } from "@/components/profile/photo-id-uploader";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -37,6 +41,10 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
+
+  // Mandatory Photo ID Gate for Checkout
+  const [photoGateOpen, setPhotoGateOpen] = useState(false);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
   async function loadProfile() {
     setLoading(true);
@@ -88,7 +96,17 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleCheckout(planId: string) {
+  // Mandatory Photo Check before checkout
+  function handleCheckout(planId: string) {
+    if (!data?.user?.photoUrl) {
+      setPendingPlanId(planId);
+      setPhotoGateOpen(true);
+      return;
+    }
+    void executeCheckout(planId);
+  }
+
+  async function executeCheckout(planId: string) {
     setCheckoutLoading(planId);
     try {
       const res = await fetch("/api/payments/chapa/initialize", {
@@ -107,6 +125,22 @@ export default function ProfilePage() {
       alert("Network error connecting to payment gateway.");
     } finally {
       setCheckoutLoading(null);
+    }
+  }
+
+  async function handlePhotoSaved(newPhotoUrl: string) {
+    setData((prev: any) => ({
+      ...prev,
+      user: { ...prev.user, photoUrl: newPhotoUrl },
+      memberPassData: prev.memberPassData ? { ...prev.memberPassData, profileImage: newPhotoUrl } : null,
+    }));
+
+    // If checkout was waiting on photo, proceed automatically!
+    if (pendingPlanId) {
+      setPhotoGateOpen(false);
+      const planToBuy = pendingPlanId;
+      setPendingPlanId(null);
+      void executeCheckout(planToBuy);
     }
   }
 
@@ -178,7 +212,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* SECTION 1: Active Pass & Card Presentation */}
+        {/* SECTION 1: Member Photo Identification Uploader */}
+        <PhotoIdUploader
+          currentPhotoUrl={user.photoUrl}
+          memberName={user.fullName || user.username}
+          onPhotoSaved={handlePhotoSaved}
+        />
+
+        {/* SECTION 2: Active Pass & Card Presentation */}
         {hasActiveMembership && memberPassData ? (
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -233,7 +274,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* SECTION 2: Membership Plans & Chapa Checkout */}
+        {/* SECTION 3: Membership Plans & Chapa Checkout */}
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight">Available Membership Plans</h2>
@@ -294,7 +335,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* SECTION 3: Account Info & Payment History */}
+        {/* SECTION 4: Account Info & Payment History */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Personal Info */}
           <div className="p-6 rounded-3xl border border-white/10 bg-[#0d0d10] space-y-4">
@@ -351,8 +392,14 @@ export default function ProfilePage() {
                   <span className="text-white font-medium">{user.phone}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/5">
-                  <span className="text-gray-400">Verification Status</span>
-                  <span className="text-emerald-400 font-bold">VERIFIED (BREVO OTP)</span>
+                  <span className="text-gray-400">Photo ID Status</span>
+                  <span className={`font-semibold ${user.photoUrl ? "text-emerald-400" : "text-amber-400"}`}>
+                    {user.photoUrl ? "✓ Verified Photo on File" : "⚠️ Missing (Required for Entry)"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-400">Gender</span>
+                  <span className="text-white font-medium">{user.gender || "Not specified"}</span>
                 </div>
               </div>
             )}
@@ -360,38 +407,77 @@ export default function ProfilePage() {
 
           {/* Payment History */}
           <div className="p-6 rounded-3xl border border-white/10 bg-[#0d0d10] space-y-4">
-            <h3 className="text-lg font-bold text-white">Payment & Billing History</h3>
+            <h3 className="text-lg font-bold text-white">Transaction & Payment History</h3>
             {payments && payments.length > 0 ? (
-              <div className="space-y-3 pt-2 max-h-60 overflow-y-auto pr-2">
+              <div className="space-y-3">
                 {payments.map((p: any) => (
-                  <div key={p._id} className="p-3 rounded-xl bg-white/5 flex items-center justify-between text-xs">
+                  <div
+                    key={p._id}
+                    className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between text-xs"
+                  >
                     <div>
-                      <div className="font-bold text-white">{p.amountETB.toLocaleString()} ETB</div>
-                      <div className="text-[10px] text-gray-400 font-mono">{p.txRef}</div>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          p.status === "COMPLETED"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-amber-500/20 text-amber-400"
-                        }`}
-                      >
-                        {p.status} ({p.provider})
-                      </span>
-                      <div className="text-[10px] text-gray-500 mt-1">
-                        {new Date(p.createdAt).toLocaleDateString()}
+                      <div className="font-bold text-white">
+                        {p.amountETB.toLocaleString()} ETB ({p.method})
+                      </div>
+                      <div className="text-gray-400 text-[11px] font-mono mt-0.5">
+                        Ref: {p.chapaReference || p.txRef || p._id.slice(-8)}
                       </div>
                     </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-full font-bold text-[10px] ${
+                        p.status === "SUCCESS"
+                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                          : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                      }`}
+                    >
+                      {p.status}
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-500 pt-4">No payment records yet.</p>
+              <div className="text-center py-8 text-gray-500 text-xs">No payment records found yet.</div>
             )}
           </div>
         </div>
       </div>
+
+      {/* CHECKOUT PHOTO GATE MODAL: Enforce photo before paying */}
+      {photoGateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-[#ff331e]/30 bg-[#121216] shadow-2xl relative space-y-5">
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoGateOpen(false);
+                setPendingPlanId(null);
+              }}
+              className="absolute top-5 right-5 text-gray-400 hover:text-white p-1 rounded-full bg-white/5"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-[#ff331e]/15 border border-[#ff331e]/30 text-[#ff4733] flex items-center justify-center mx-auto mb-3">
+                <Camera size={26} />
+              </div>
+              <h2 className="text-2xl font-extrabold text-white">Member Photo ID Required</h2>
+              <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
+                Before activating your pass, please add a portrait photo. Cashiers and turnstile attendants visually match this photo to verify your identity upon entry.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <PhotoIdUploader
+                currentPhotoUrl={user.photoUrl}
+                memberName={user.fullName || user.username}
+                onPhotoSaved={handlePhotoSaved}
+                requiredForCheckout={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

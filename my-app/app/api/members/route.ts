@@ -28,7 +28,7 @@ export async function GET() {
           membershipPlan: sub?.planName || "No Active Plan",
           membershipStartDate: sub ? sub.startDate.toISOString().slice(0, 10) : u.createdAt.toISOString().slice(0, 10),
           membershipEndDate: sub ? sub.endDate.toISOString().slice(0, 10) : u.createdAt.toISOString().slice(0, 10),
-          profileImage: null,
+          profileImage: u.photoUrl || null,
           isActive,
           createdAt: u.createdAt.toISOString(),
           isVerified: u.isVerified,

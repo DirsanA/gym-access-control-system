@@ -103,14 +103,48 @@ export function MemberCard({ member }: { member: CardMember }) {
     context.lineTo(540, 275);
     context.stroke();
 
+    // Member Portrait Photo on Canvas
+    let textLeft = 110;
+    if (member.profileImage) {
+      try {
+        const photoImg = await loadImage(member.profileImage);
+        const photoSize = 130;
+        const photoX = 110;
+        const photoY = 360;
+
+        context.save();
+        context.beginPath();
+        if (context.roundRect) {
+          context.roundRect(photoX, photoY, photoSize, photoSize, [20]);
+        } else {
+          context.rect(photoX, photoY, photoSize, photoSize);
+        }
+        context.clip();
+        context.drawImage(photoImg, photoX, photoY, photoSize, photoSize);
+        context.restore();
+
+        // Glowing border around photo
+        context.strokeStyle = "#c2f83a";
+        context.lineWidth = 4;
+        context.beginPath();
+        if (context.roundRect) context.roundRect(photoX, photoY, photoSize, photoSize, [20]);
+        else context.rect(photoX, photoY, photoSize, photoSize);
+        context.stroke();
+
+        textLeft = 265;
+      } catch {
+        /* fallback to regular layout */
+      }
+    }
+
     // Member Name & ID
     context.fillStyle = "#ffffff";
-    context.font = "900 72px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    context.fillText(member.fullName.toUpperCase().slice(0, 22), 110, 440);
+    context.font = "900 64px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    context.fillText(member.fullName.toUpperCase().slice(0, 20), textLeft, 435);
 
     context.fillStyle = "#c2f83a";
-    context.font = "900 36px 'Courier New', monospace";
-    context.fillText(member.memberId, 110, 505);
+    context.font = "900 34px 'Courier New', monospace";
+    context.fillText(member.memberId, textLeft, 490);
 
     // Plan & Expiry
     context.fillStyle = "rgba(244, 247, 245, 0.75)";
@@ -139,7 +173,7 @@ export function MemberCard({ member }: { member: CardMember }) {
     // Bottom note
     context.fillStyle = "rgba(244, 247, 245, 0.5)";
     context.font = "700 18px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    context.fillText("PRESENT TO OPTICAL SENSOR · POWERED BY NEXUS SECURITY", 110, 715);
+    context.fillText("PRESENT TO OPTICAL SENSOR · POWERED BY ELITE PASS SECURITY", 110, 715);
 
     return canvas;
   }, [member, qrDataUrl]);
@@ -150,7 +184,7 @@ export function MemberCard({ member }: { member: CardMember }) {
     try {
       const canvas = await renderCard();
       const link = document.createElement("a");
-      link.download = `${member.memberId}-nexus-pass.png`;
+      link.download = `${member.memberId}-elite-pass.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } finally {
@@ -173,8 +207,8 @@ export function MemberCard({ member }: { member: CardMember }) {
       const file = new File([blob], `${member.memberId}-pass.png`, { type: "image/png" });
       const data = {
         files: [file],
-        title: `${member.fullName} — Nexus Athletic Club Pass`,
-        text: `Nexus Athletic Club official membership pass\n${member.fullName} · ${member.memberId}\nValid until ${cardDate(member.membershipEndDate)}`,
+        title: `${member.fullName} — Elite Fitness Pass`,
+        text: `Elite Fitness Club official membership pass\n${member.fullName} · ${member.memberId}\nValid until ${cardDate(member.membershipEndDate)}`,
       };
       if (navigator.canShare && navigator.canShare(data)) {
         await navigator.share(data);
@@ -188,7 +222,7 @@ export function MemberCard({ member }: { member: CardMember }) {
 
   function openTelegram() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `Nexus Athletic Club Membership Pass\nMember: ${member.fullName}\nID: ${member.memberId}\nValid until: ${cardDate(member.membershipEndDate)}`;
+    const text = `Elite Fitness Club Membership Pass\nMember: ${member.fullName}\nID: ${member.memberId}\nValid until: ${cardDate(member.membershipEndDate)}`;
     const share = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
     window.open(share, "_blank", "noopener,noreferrer");
   }
@@ -207,9 +241,24 @@ export function MemberCard({ member }: { member: CardMember }) {
             <span>ELITE FITNESS · ADDIS ABABA, ETHIOPIA</span>
           </div>
 
-          <p className="member-card__caption">VERIFIED ATHLETE ACCESS PASS</p>
-          <h2 title={member.fullName}>{member.fullName}</h2>
-          <p className="member-card__id">{member.memberId}</p>
+          <div className="flex items-center gap-4 my-2">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#c2f83a] bg-black/60 shadow-xl shrink-0">
+              {member.profileImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={member.profileImage} alt={member.fullName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-[#c2f83a] bg-white/5 font-mono font-bold text-[10px]">
+                  <span>PHOTO</span>
+                  <span>ID</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="member-card__caption">VERIFIED ATHLETE ACCESS PASS</p>
+              <h2 title={member.fullName} className="!my-0">{member.fullName}</h2>
+              <p className="member-card__id">{member.memberId}</p>
+            </div>
+          </div>
 
           <div className="member-card__meta">
             <div>

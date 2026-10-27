@@ -366,11 +366,30 @@ export function ScannerTerminal() {
                 <dd>Addis Ababa, Ethiopia</dd>
               </div>
             </dl>
+
+            {/* Cashier Photo Match Prompt */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                member.profileImage ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+              }`}>
+                {member.profileImage ? <Check size={16} strokeWidth={3} /> : <TriangleAlert size={16} />}
+              </div>
+              <div className="text-left text-xs">
+                <div className="font-bold text-white">
+                  {member.profileImage ? "CASHIER IDENTITY CONFIRMATION" : "PHOTO ID NOT ON FILE"}
+                </div>
+                <div className="text-[11px] text-gray-400 leading-snug">
+                  {member.profileImage
+                    ? "Confirm the member standing at the entrance matches the photo ID above."
+                    : "Please advise member to upload their face photo on their profile."}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="verify-card__footer">
             <Dumbbell size={14} aria-hidden="true" />
-            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+            <span>ELITE FITNESS CLUB &middot; ENTRANCE TERMINAL</span>
           </div>
         </div>
       )}
@@ -439,7 +458,7 @@ export function ScannerTerminal() {
             {scanInput && <p className="verify-card__scanned-id">Scanned: {scanInput}</p>}
           </div>
           <div className="verify-card__footer verify-card__footer--error">
-            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+            <span>ELITE FITNESS CLUB &middot; ENTRANCE TERMINAL</span>
           </div>
         </div>
       )}
@@ -462,7 +481,7 @@ export function ScannerTerminal() {
             <p className="verify-card__copy verify-card__copy--sub">The terminal will reset automatically.</p>
           </div>
           <div className="verify-card__footer verify-card__footer--error">
-            <span>NEXUS ATHLETIC CLUB &middot; ENTRANCE TERMINAL</span>
+            <span>ELITE FITNESS CLUB &middot; ENTRANCE TERMINAL</span>
           </div>
         </div>
       )}
