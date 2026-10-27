@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowRight,
   Calendar,
   Camera,
   CheckCircle2,
@@ -19,6 +20,7 @@ import {
   Phone,
   QrCode,
   RefreshCw,
+  Shield,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -96,9 +98,9 @@ export default function ProfilePage() {
     }
   }
 
-  // Mandatory Photo Check before checkout
+  // Mandatory Photo Check before checkout (waived for administrators)
   function handleCheckout(planId: string) {
-    if (!data?.user?.photoUrl) {
+    if (data?.user?.role !== "admin" && !data?.user?.photoUrl) {
       setPendingPlanId(planId);
       setPhotoGateOpen(true);
       return;
@@ -174,6 +176,7 @@ export default function ProfilePage() {
   }
 
   const { user, hasActiveMembership, activeSubscription, memberPassData, allSubscriptions, payments, availablePlans } = data;
+  const isAdmin = user?.role === "admin";
 
   return (
     <main className="min-h-screen bg-[#040405] pt-28 pb-20 px-4">
@@ -182,24 +185,36 @@ export default function ProfilePage() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-mono font-semibold text-emerald-400">VERIFIED CUSTOMER PORTAL</span>
+              <span className={`h-2 w-2 rounded-full ${isAdmin ? "bg-amber-400" : "bg-emerald-400"} animate-pulse`} />
+              <span className={`text-xs font-mono font-semibold ${isAdmin ? "text-amber-400" : "text-emerald-400"}`}>
+                {isAdmin ? "ADMINISTRATOR OPERATIONS PORTAL" : "VERIFIED CUSTOMER PORTAL"}
+              </span>
             </div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
               Welcome, {user.fullName || user.username}
             </h1>
             <p className="text-xs text-gray-400 mt-1">
-              Member ID: <span className="font-mono text-white font-bold">{user.memberId || "Pending Membership"}</span> &bull; {user.email}
+              {isAdmin ? (
+                <span>
+                  Role: <span className="font-mono text-amber-400 font-bold">SYSTEM ADMINISTRATOR</span> &bull; Full Turnstile & Console Access &bull; {user.email}
+                </span>
+              ) : (
+                <span>
+                  Member ID: <span className="font-mono text-white font-bold">{user.memberId || "Pending Membership"}</span> &bull; {user.email}
+                </span>
+              )}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {user.role === "admin" && (
+            {isAdmin && (
               <Link
                 href="/admin"
-                className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-white transition-all flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-amber-400/20"
               >
+                <Shield size={14} />
                 <span>Admin Console</span>
+                <ArrowRight size={14} />
               </Link>
             )}
             <button
@@ -212,12 +227,38 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* SECTION 1: Member Photo Identification Uploader */}
-        <PhotoIdUploader
-          currentPhotoUrl={user.photoUrl}
-          memberName={user.fullName || user.username}
-          onPhotoSaved={handlePhotoSaved}
-        />
+        {/* SECTION 1: Member Photo Identification Uploader (Only for regular members) */}
+        {isAdmin ? (
+          <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-amber-500/15 via-[#121216] to-[#0d0d10] border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="text-amber-400" size={20} />
+                <span className="text-xs font-bold font-mono text-amber-400 tracking-wider">
+                  ADMINISTRATOR PRIVILEGES ACTIVE
+                </span>
+              </div>
+              <h2 className="text-2xl font-extrabold text-white">Full Operations & Turnstile Control</h2>
+              <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
+                You are logged in with administrative privileges. Member photo ID verification and turnstile pass checkout requirements are waived for your account. You can manage members, record manual cash memberships, view real-time turnstile attendance logs, and oversee the Addis Ababa hub.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full md:w-auto">
+              <Link
+                href="/admin"
+                className="px-6 py-3 rounded-full bg-[#c2f83a] hover:bg-[#b0e82c] text-[#081310] font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Shield size={14} />
+                <span>Open Admin Console</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <PhotoIdUploader
+            currentPhotoUrl={user.photoUrl}
+            memberName={user.fullName || user.username}
+            onPhotoSaved={handlePhotoSaved}
+          />
+        )}
 
         {/* SECTION 2: Active Pass & Card Presentation */}
         {hasActiveMembership && memberPassData ? (
@@ -262,6 +303,24 @@ export default function ProfilePage() {
               </div>
             </div>
           </section>
+        ) : isAdmin ? (
+          <div className="p-6 md:p-8 rounded-3xl border border-white/10 bg-[#0d0d10] space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
+              <Shield size={16} />
+              <span className="font-mono">ADMINISTRATOR TURNSTILE CLEARANCE</span>
+            </div>
+            <h2 className="text-xl font-bold text-white">Staff Superuser Privileges Active</h2>
+            <p className="text-xs text-gray-400 max-w-2xl leading-relaxed">
+              Staff accounts bypass customer turnstile subscriptions. To register new members, record manual cash receipts, or audit gate check-ins, access the{" "}
+              <Link href="/admin" className="text-[#c2f83a] underline font-bold">
+                Admin Console
+              </Link>{" "}
+              or launch the{" "}
+              <Link href="/scanner" className="text-[#c2f83a] underline font-bold">
+                Entrance Gate Scanner
+              </Link>.
+            </p>
+          </div>
         ) : (
           <div className="p-8 rounded-3xl border border-white/10 bg-[#0d0d10] text-center max-w-2xl mx-auto space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">

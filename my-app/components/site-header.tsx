@@ -115,13 +115,13 @@ export function SiteHeader() {
             {authChecked && currentUser ? (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/profile"
+                  href={currentUser.role === "admin" ? "/admin" : "/profile"}
                   className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all ${
-                    pathname === "/profile"
+                    (currentUser.role === "admin" ? pathname.startsWith("/admin") : pathname === "/profile")
                       ? "bg-[#ff331e]/20 border-[#ff331e]/50 shadow-[0_0_15px_rgba(255,51,30,0.3)]"
                       : "bg-white/5 hover:bg-white/10 border-white/15"
                   }`}
-                  title="View Member Profile & Pass"
+                  title={currentUser.role === "admin" ? "Open Admin Console" : "View Member Profile & Pass"}
                 >
                   <div className="w-7 h-7 rounded-full overflow-hidden bg-[#ff331e] border border-white/20 flex items-center justify-center text-xs font-black text-white shrink-0">
                     {currentUser.photoUrl ? (
@@ -278,14 +278,34 @@ export function SiteHeader() {
             {currentUser ? (
               <div className="space-y-2">
                 <Link
-                  href="/profile"
+                  href={currentUser.role === "admin" ? "/admin" : "/profile"}
                   onClick={close}
                   className="app-header__menu-cta"
                 >
-                  <QrCode size={16} />
-                  <span>Open Digital Entrance Pass</span>
-                  <ArrowUpRight size={16} />
+                  {currentUser.role === "admin" ? (
+                    <>
+                      <Shield size={16} />
+                      <span>Open Admin Operations Console</span>
+                      <ArrowUpRight size={16} />
+                    </>
+                  ) : (
+                    <>
+                      <QrCode size={16} />
+                      <span>Open Digital Entrance Pass</span>
+                      <ArrowUpRight size={16} />
+                    </>
+                  )}
                 </Link>
+                {currentUser.role === "admin" && (
+                  <Link
+                    href="/profile"
+                    onClick={close}
+                    className="w-full py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <User size={14} />
+                    <span>My Account Details</span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}
