@@ -17,21 +17,26 @@ export async function POST(request: Request) {
 
     await connectDB();
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return NextResponse.json({ success: false, message: "Account not found." }, { status: 404 });
-    }
-
-    if (user.isVerified) {
+    // Check if user is already verified
+    const verifiedUser = await User.findOne({ email, isVerified: true });
+    if (verifiedUser) {
       return NextResponse.json(
         { success: false, message: "Account is already verified. Please sign in." },
         { status: 400 }
       );
     }
 
-    // Check rate limit on resending (must wait at least 60 seconds)
+    // Find pending OTP session
     const existingOtp = await Otp.findOne({ email });
-    if (existingOtp && new Date() < existingOtp.resendAvailableAt) {
+    if (!existingOtp) {
+      return NextResponse.json(
+        { success: false, message: "No active registration found. Please submit the registration form." },
+        { status: 404 }
+      );
+    }
+
+    // Check rate limit on resending (must wait at least 60 seconds)
+    if (new Date() < existingOtp.resendAvailableAt) {
       const waitSeconds = Math.ceil((existingOtp.resendAvailableAt.getTime() - Date.now()) / 1000);
       return NextResponse.json(
         {
@@ -42,22 +47,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate new OTP
+    // Generate new OTP while preserving pending registrationData
     const otp = generateOTP(6);
     const otpHash = hashString(otp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    const resendAvailableAt = new Date(Date.now() + 60 * 1000);
+    existingOtp.otpHash = otpHash;
+    existingOtp.attempts = 0;
+    existingOtp.expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    existingOtp.resendAvailableAt = new Date(Date.now() + 60 * 1000);
+    await existingOtp.save();
 
-    await Otp.deleteMany({ email });
-    await Otp.create({
-      email,
-      otpHash,
-      attempts: 0,
-      expiresAt,
-      resendAvailableAt,
-    });
-
-    await sendOtpEmail(email, otp, user.username);
+    const username = existingOtp.registrationData?.username || "Athlete";
+    await sendOtpEmail(email, otp, username);
 
     return NextResponse.json({
       success: true,

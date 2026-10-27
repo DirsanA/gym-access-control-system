@@ -6,6 +6,14 @@ export interface IOtp extends Document {
   attempts: number;
   expiresAt: Date;
   resendAvailableAt: Date;
+  // Pending registration data stored securely until OTP is successfully validated
+  registrationData?: {
+    username: string;
+    fullName: string;
+    phone: string;
+    gender?: string;
+    passwordHash: string;
+  };
   createdAt: Date;
 }
 
@@ -34,6 +42,9 @@ const OtpSchema = new Schema<IOtp>(
     resendAvailableAt: {
       type: Date,
       required: true,
+    },
+    registrationData: {
+      type: Schema.Types.Mixed,
     },
   },
   {

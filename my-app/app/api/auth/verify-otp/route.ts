@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     if (new Date() > otpRecord.expiresAt) {
       await Otp.deleteOne({ _id: otpRecord._id });
       return NextResponse.json(
-        { success: false, message: "Verification code has expired. Please request a new one." },
+        { success: false, message: "Verification code has expired. Please re-register." },
         { status: 400 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     if (otpRecord.attempts >= 5) {
       await Otp.deleteOne({ _id: otpRecord._id });
       return NextResponse.json(
-        { success: false, message: "Too many failed attempts. Please request a new code." },
+        { success: false, message: "Too many failed attempts. Please submit the registration form again." },
         { status: 429 }
       );
     }
@@ -68,15 +68,31 @@ export async function POST(request: Request) {
       );
     }
 
-    // OTP is valid! Mark user as verified
-    const user = await User.findOneAndUpdate(
-      { email: normalizedEmail },
-      { isVerified: true },
-      { new: true }
-    );
+    // OTP IS VALID!
+    // Now create the verified User in the User collection
+    let user = await User.findOne({ email: normalizedEmail });
 
-    if (!user) {
-      return NextResponse.json({ success: false, message: "User record not found." }, { status: 404 });
+    if (!user && otpRecord.registrationData) {
+      const reg = otpRecord.registrationData;
+      user = await User.create({
+        username: reg.username,
+        email: normalizedEmail,
+        phone: reg.phone,
+        fullName: reg.fullName,
+        gender: reg.gender,
+        passwordHash: reg.passwordHash,
+        role: "customer",
+        isVerified: true,
+        isSuspended: false,
+      });
+    } else if (user) {
+      user.isVerified = true;
+      await user.save();
+    } else {
+      return NextResponse.json(
+        { success: false, message: "Registration session not found. Please register again." },
+        { status: 400 }
+      );
     }
 
     // Delete used OTP
@@ -103,7 +119,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Account verified successfully! Welcome to Elite Fitness.",
+      message: "Account verified and registered successfully! Welcome to Elite Fitness.",
       user: {
         id: user._id,
         username: user.username,

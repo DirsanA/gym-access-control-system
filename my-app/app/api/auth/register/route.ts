@@ -50,40 +50,34 @@ export async function POST(request: Request) {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedUsername = username.trim().toLowerCase();
 
-    // Check for existing users
-    const existingUser = await User.findOne({
+    // Check if an already VERIFIED user exists with this email or username
+    const verifiedUser = await User.findOne({
       $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+      isVerified: true,
     });
 
-    if (existingUser) {
-      if (existingUser.email === normalizedEmail) {
+    if (verifiedUser) {
+      if (verifiedUser.email === normalizedEmail) {
         return NextResponse.json(
-          { success: false, message: "An account with this email already exists." },
+          { success: false, message: "An account with this email is already registered and verified. Please sign in." },
           { status: 409 }
         );
       }
       return NextResponse.json(
-        { success: false, message: "This username is already taken." },
+        { success: false, message: "This username is already taken. Please choose another." },
         { status: 409 }
       );
     }
 
+    // Clean up any stale unverified user record with this email or username
+    await User.deleteMany({
+      $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+      isVerified: false,
+    });
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
-
-    // Create unverified customer
-    const user = await User.create({
-      username: normalizedUsername,
-      email: normalizedEmail,
-      phone: phone.trim(),
-      fullName: fullName?.trim() || username.trim(),
-      gender: gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? gender : undefined,
-      passwordHash,
-      role: "customer",
-      isVerified: false,
-      isSuspended: false,
-    });
 
     // Generate cryptographic OTP
     const otp = generateOTP(6);
@@ -91,7 +85,7 @@ export async function POST(request: Request) {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     const resendAvailableAt = new Date(Date.now() + 60 * 1000); // 1 minute cooldown
 
-    // Save hashed OTP
+    // Save pending registration inside OTP document (User is NOT created in User collection yet!)
     await Otp.deleteMany({ email: normalizedEmail });
     await Otp.create({
       email: normalizedEmail,
@@ -99,17 +93,24 @@ export async function POST(request: Request) {
       attempts: 0,
       expiresAt,
       resendAvailableAt,
+      registrationData: {
+        username: normalizedUsername,
+        email: normalizedEmail,
+        phone: phone.trim(),
+        fullName: fullName?.trim() || username.trim(),
+        gender: gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? gender : undefined,
+        passwordHash,
+      },
     });
 
     // Send email via Brevo SMTP
-    await sendOtpEmail(normalizedEmail, otp, user.username);
+    await sendOtpEmail(normalizedEmail, otp, username.trim());
 
     return NextResponse.json(
       {
         success: true,
-        message: "Registration successful. Please enter the verification code sent to your email.",
+        message: "Registration received! Please enter the 6-digit verification code sent to your email.",
         email: normalizedEmail,
-        userId: user._id,
       },
       { status: 201 }
     );
