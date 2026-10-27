@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   CalendarPlus,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   CreditCard,
   Filter,
@@ -21,8 +23,40 @@ import { MemberCard } from "@/components/member-card";
 import type { ScannerMember } from "@/types/scanner";
 
 type Member = ScannerMember & { phone: string; gender?: string; isActive: boolean; createdAt: string };
-type ListResponse = { success: boolean; members?: Member[]; message?: string };
+type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+type GlobalCounts = {
+  total: number;
+  active: number;
+  expired: number;
+};
+type ListResponse = {
+  success: boolean;
+  members?: Member[];
+  pagination?: PaginationMeta;
+  counts?: GlobalCounts;
+  message?: string;
+};
 type FilterStatus = "ALL" | "ACTIVE" | "EXPIRED";
+
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, "...", total];
+  }
+  if (current >= total - 2) {
+    return [1, "...", total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
 
 function status(member: Member) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(new Date());
@@ -54,13 +88,40 @@ export function AdminMemberManager() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  async function loadMembers() {
+  // Server-side pagination & global database counts
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+  const [counts, setCounts] = useState<GlobalCounts>({
+    total: 0,
+    active: 0,
+    expired: 0,
+  });
+
+  async function loadMembers(currentPage = page, currentFilter = filterStatus, searchQuery = query, currentLimit = limit) {
     setLoading(true);
     try {
-      const response = await fetch("/api/members", { cache: "no-store" });
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: currentLimit.toString(),
+        status: currentFilter,
+      });
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
+      }
+      const response = await fetch(`/api/members?${params.toString()}`, { cache: "no-store" });
       const data = (await response.json().catch(() => null)) as ListResponse | null;
       if (!response.ok || !data?.members) throw new Error(data?.message ?? "Unable to load members.");
       setMembers(data.members);
+      if (data.pagination) setPagination(data.pagination);
+      if (data.counts) setCounts(data.counts);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Unable to load members.");
     } finally {
@@ -68,25 +129,15 @@ export function AdminMemberManager() {
     }
   }
 
+  // Debounced indexed query on search/filter/page/limit changes
   useEffect(() => {
-    void loadMembers();
-  }, []);
-
-  const visible = useMemo(() => {
-    const search = query.trim().toLowerCase();
-    return members.filter((member) => {
-      const matchesSearch =
-        !search ||
-        `${member.fullName} ${member.memberId} ${member.phone}`.toLowerCase().includes(search);
-      const matchesStatus = filterStatus === "ALL" || status(member) === filterStatus;
-      return matchesSearch && matchesStatus;
-    });
-  }, [members, query, filterStatus]);
+    const timer = setTimeout(() => {
+      void loadMembers(page, filterStatus, query, limit);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [page, filterStatus, query, limit]);
 
   const endDate = useMemo(() => endDateFor(startDate, duration), [startDate, duration]);
-
-  const activeCount = useMemo(() => members.filter((m) => status(m) === "ACTIVE").length, [members]);
-  const expiredCount = useMemo(() => members.filter((m) => status(m) === "EXPIRED").length, [members]);
 
   async function renew(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,6 +164,7 @@ export function AdminMemberManager() {
       );
       setRenewing(null);
       setNotice(`${data.member.fullName} extended by ${renewalDays} days. Pass is immediately active.`);
+      void loadMembers(page, filterStatus, query, limit);
     } catch {
       setNotice("Network error. Please try again.");
     } finally {
@@ -135,6 +187,7 @@ export function AdminMemberManager() {
       setMembers((current) => current.filter((m) => m.memberId !== deleting.memberId));
       setDeleting(null);
       setNotice(`${deleting.fullName} has been removed.`);
+      void loadMembers(page, filterStatus, query, limit);
     } catch {
       setNotice("Network error. Please try again.");
     } finally {
@@ -170,12 +223,13 @@ export function AdminMemberManager() {
         return;
       }
       window.localStorage.setItem(`gym-mock-member:${data.member.memberId}`, JSON.stringify(data.member));
-      setMembers((current) => [data.member!, ...current]);
       setAdding(false);
       setStartDate(new Date().toISOString().slice(0, 10));
       setDuration("1");
       setSelected(data.member);
       setNotice(`${data.member.fullName} registered. Digital card generated.`);
+      setPage(1);
+      void loadMembers(1, filterStatus, query, limit);
     } catch {
       setNotice("Network error. Please try again.");
     } finally {
@@ -212,7 +266,7 @@ export function AdminMemberManager() {
                 <UsersRound size={18} />
               </div>
               <div className="stat-card__data">
-                <b>{members.length}</b>
+                <b>{counts.total}</b>
                 <small>TOTAL MEMBERS</small>
               </div>
             </div>
@@ -222,7 +276,7 @@ export function AdminMemberManager() {
                 <UserCheck size={18} />
               </div>
               <div className="stat-card__data">
-                <b className="text-[#c2f83a]">{activeCount}</b>
+                <b className="text-[#c2f83a]">{counts.active}</b>
                 <small>ACTIVE PASSES</small>
               </div>
             </div>
@@ -232,7 +286,7 @@ export function AdminMemberManager() {
                 <UserX size={18} />
               </div>
               <div className="stat-card__data">
-                <b className={expiredCount > 0 ? "text-[#ff8c42]" : ""}>{expiredCount}</b>
+                <b className={counts.expired > 0 ? "text-[#ff8c42]" : ""}>{counts.expired}</b>
                 <small>EXPIRED</small>
               </div>
             </div>
@@ -266,13 +320,19 @@ export function AdminMemberManager() {
               <Search size={16} />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search by name, ID or phone..."
               />
               {query && (
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
+                  onClick={() => {
+                    setQuery("");
+                    setPage(1);
+                  }}
                   className="text-gray-400 hover:text-white"
                 >
                   <X size={14} />
@@ -286,7 +346,10 @@ export function AdminMemberManager() {
                   key={s}
                   type="button"
                   className={`admin-filter__btn ${filterStatus === s ? "admin-filter__btn--active" : ""}`}
-                  onClick={() => setFilterStatus(s)}
+                  onClick={() => {
+                    setFilterStatus(s);
+                    setPage(1);
+                  }}
                 >
                   {s}
                 </button>
@@ -302,7 +365,7 @@ export function AdminMemberManager() {
           </div>
         ) : (
           <div className="admin-members">
-            {visible.map((member) => {
+            {members.map((member) => {
               const currentStatus = status(member);
               const isActive = currentStatus === "ACTIVE";
               return (
@@ -374,12 +437,12 @@ export function AdminMemberManager() {
               );
             })}
 
-            {visible.length === 0 && (
+            {members.length === 0 && (
               <div className="admin-loading text-center py-16">
                 <p className="text-base text-gray-400">
-                  {members.length === 0 ? "No members registered yet." : "No members match that search query."}
+                  {query || filterStatus !== "ALL" ? "No members match that filter query." : "No members registered yet."}
                 </p>
-                {members.length === 0 && (
+                {members.length === 0 && !query && filterStatus === "ALL" && (
                   <button
                     onClick={() => setAdding(true)}
                     className="mt-4 px-4 py-2 rounded-xl bg-[#c2f83a] text-[#081310] font-bold text-xs"
@@ -390,6 +453,74 @@ export function AdminMemberManager() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Server-Side Pagination Bar */}
+        {!loading && pagination.total > 0 && (
+          <footer className="admin-directory__pagination">
+            <div className="admin-pagination__info">
+              <span>
+                Showing <strong>{Math.min((page - 1) * limit + 1, pagination.total)}</strong> to{" "}
+                <strong>{Math.min(page * limit, pagination.total)}</strong> of{" "}
+                <strong>{pagination.total}</strong> members
+              </span>
+
+              <div className="admin-pagination__select-wrap">
+                <span>Per page:</span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="admin-pagination__select"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="admin-pagination__nav">
+              <button
+                type="button"
+                className="admin-pagination__btn"
+                disabled={!pagination.hasPrevPage}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {getPageNumbers(page, pagination.totalPages).map((p, idx) =>
+                p === "..." ? (
+                  <span key={`dots-${idx}`} className="admin-pagination__dots">
+                    &bull;&bull;&bull;
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`admin-pagination__btn ${page === p ? "admin-pagination__btn--active" : ""}`}
+                    onClick={() => setPage(Number(p))}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                className="admin-pagination__btn"
+                disabled={!pagination.hasNextPage}
+                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                aria-label="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </footer>
         )}
       </section>
 

@@ -7,6 +7,8 @@ import {
   Banknote,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   CreditCard,
   Dumbbell,
@@ -34,6 +36,15 @@ export default function AdminDashboardPage() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "members" | "cash" | "scans">("overview");
 
+  // Turnstile Scan Logs state & pagination
+  const [scans, setScans] = useState<any[]>([]);
+  const [scanPage, setScanPage] = useState(1);
+  const [scanTotalPages, setScanTotalPages] = useState(1);
+  const [scanTotal, setScanTotal] = useState(0);
+  const [scansLoading, setScansLoading] = useState(false);
+  const [scanFilter, setScanFilter] = useState("ALL");
+  const [scanSearch, setScanSearch] = useState("");
+
   // Cash recording modal state
   const [cashModalOpen, setCashModalOpen] = useState(false);
   const [membersList, setMembersList] = useState<any[]>([]);
@@ -44,6 +55,41 @@ export default function AdminDashboardPage() {
   const [adminNotes, setAdminNotes] = useState("");
   const [cashSubmitting, setCashSubmitting] = useState(false);
   const [cashNotice, setCashNotice] = useState("");
+
+  async function loadScans(page = scanPage, filter = scanFilter, search = scanSearch) {
+    setScansLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "12",
+      });
+      if (filter && filter !== "ALL") params.set("result", filter);
+      if (search.trim()) params.set("search", search.trim());
+
+      const res = await fetch(`/api/check-ins?${params.toString()}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setScans(data.scans || []);
+        if (data.pagination) {
+          setScanTotal(data.pagination.total);
+          setScanTotalPages(data.pagination.totalPages);
+        }
+      }
+    } catch {
+      // fallback
+    } finally {
+      setScansLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "scans") {
+      const timer = setTimeout(() => {
+        void loadScans(scanPage, scanFilter, scanSearch);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, scanPage, scanFilter, scanSearch]);
 
   async function checkAdminAndLoadStats() {
     setLoading(true);
@@ -63,8 +109,8 @@ export default function AdminDashboardPage() {
         setStats(statsData);
       }
 
-      // Load members & plans for cash payment recording
-      const membersRes = await fetch("/api/members");
+      // Load members & plans for cash payment recording (unpaginated list)
+      const membersRes = await fetch("/api/members?all=true");
       const membersData = await membersRes.json();
       if (membersData.members) setMembersList(membersData.members);
 
@@ -371,17 +417,72 @@ export default function AdminDashboardPage() {
         )}
 
         {/* TAB 3: TURNSTILE SCAN LOGS */}
-        {activeTab === "scans" && stats && (
+        {activeTab === "scans" && (
           <div className="p-6 rounded-3xl bg-[#0d0d10] border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <ScanLine size={20} className="text-[#ff331e]" />
-                <span>Turnstile Entrance Scan Logs & Attendance</span>
-              </h3>
-              <span className="text-xs text-gray-400">Real-time gate check-ins</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <ScanLine size={20} className="text-[#ff331e]" />
+                  <span>Turnstile Entrance Scan Logs & Attendance</span>
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">Real-time gate check-ins with server-side indexing & pagination</p>
+              </div>
+
+              {/* Controls */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={scanSearch}
+                    onChange={(e) => {
+                      setScanSearch(e.target.value);
+                      setScanPage(1);
+                    }}
+                    placeholder="Search Member ID / log..."
+                    className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e] w-48"
+                  />
+                  {scanSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanSearch("");
+                        setScanPage(1);
+                      }}
+                      className="absolute right-2.5 top-2 text-gray-400 hover:text-white"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-full">
+                  {(["ALL", "SUCCESS", "EXPIRED", "NOT_FOUND"] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => {
+                        setScanFilter(status);
+                        setScanPage(1);
+                      }}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors ${
+                        scanFilter === status
+                          ? "bg-[#ff331e] text-white"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {stats.recentScans && stats.recentScans.length > 0 ? (
+            {scansLoading ? (
+              <div className="flex items-center justify-center py-12 text-gray-400 text-xs">
+                <RefreshCw size={18} className="animate-spin text-[#ff331e] mr-2" />
+                <span>Querying indexed scan records...</span>
+              </div>
+            ) : scans.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-white/10 text-gray-400 font-mono">
@@ -394,7 +495,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-gray-300">
-                    {stats.recentScans.map((scan: any) => (
+                    {scans.map((scan: any) => (
                       <tr key={scan._id} className="hover:bg-white/5">
                         <td className="py-3 px-4 font-mono text-gray-400">
                           {new Date(scan.scannedAt).toLocaleTimeString()} &bull; {new Date(scan.scannedAt).toLocaleDateString()}
@@ -419,7 +520,46 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
             ) : (
-              <p className="text-xs text-gray-500 py-8 text-center">No turnstile scans recorded yet.</p>
+              <p className="text-xs text-gray-500 py-8 text-center">
+                {scanSearch || scanFilter !== "ALL"
+                  ? "No turnstile scans match the selected filter."
+                  : "No turnstile scans recorded yet."}
+              </p>
+            )}
+
+            {/* Pagination Controls for Scans */}
+            {!scansLoading && scanTotal > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10 text-xs text-gray-400">
+                <span>
+                  Showing <strong>{Math.min((scanPage - 1) * 12 + 1, scanTotal)}</strong> to{" "}
+                  <strong>{Math.min(scanPage * 12, scanTotal)}</strong> of{" "}
+                  <strong>{scanTotal}</strong> scans
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={scanPage <= 1}
+                    onClick={() => setScanPage((p) => Math.max(1, p - 1))}
+                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10"
+                    aria-label="Previous scan page"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="font-mono text-gray-300">
+                    Page {scanPage} of {scanTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={scanPage >= scanTotalPages}
+                    onClick={() => setScanPage((p) => Math.min(scanTotalPages, p + 1))}
+                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10"
+                    aria-label="Next scan page"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}

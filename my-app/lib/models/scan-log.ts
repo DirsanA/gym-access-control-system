@@ -49,5 +49,10 @@ const ScanLogSchema = new Schema<IScanLog>(
   }
 );
 
+// High-performance live scan feed, audits and member queries
+ScanLogSchema.index({ scannedAt: -1 });
+ScanLogSchema.index({ memberId: 1, scannedAt: -1 });
+ScanLogSchema.index({ result: 1, scannedAt: -1 });
+
 export const ScanLog: Model<IScanLog> =
   mongoose.models.ScanLog || mongoose.model<IScanLog>("ScanLog", ScanLogSchema);

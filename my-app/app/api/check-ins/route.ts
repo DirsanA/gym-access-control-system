@@ -5,6 +5,53 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(request: Request) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "15", 10)));
+    const search = searchParams.get("search")?.trim() || searchParams.get("query")?.trim() || "";
+    const resultFilter = searchParams.get("result")?.trim().toUpperCase();
+
+    const query: any = {};
+    if (resultFilter && ["SUCCESS", "EXPIRED", "NOT_FOUND", "SUSPENDED", "REVOKED"].includes(resultFilter)) {
+      query.result = resultFilter;
+    }
+    if (search) {
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      query.$or = [{ memberId: regex }, { message: regex }, { scannerId: regex }];
+    }
+
+    const [scans, total] = await Promise.all([
+      ScanLog.find(query)
+        .sort({ scannedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      ScanLog.countDocuments(query),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return NextResponse.json({
+      success: true,
+      scans,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error: any) {
+    console.error("[CHECKINS_GET_ERROR]", error);
+    return NextResponse.json({ success: false, message: error?.message || "Failed to load scan logs." }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);

@@ -83,4 +83,13 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
+// High-performance search and pagination indexes
+UserSchema.index({ phone: 1 });
+UserSchema.index({ fullName: 1 });
+UserSchema.index({ role: 1, createdAt: -1 });
+UserSchema.index({ role: 1, isVerified: 1 });
+UserSchema.index({ role: 1, isSuspended: 1 });
+UserSchema.index({ role: 1, memberId: 1 });
+UserSchema.index({ createdAt: -1 });
+
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);

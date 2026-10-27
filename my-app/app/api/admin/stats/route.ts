@@ -14,46 +14,65 @@ export async function GET() {
 
     await connectDB();
 
-    const totalMembers = await User.countDocuments({ role: "customer" });
-    const verifiedMembers = await User.countDocuments({ role: "customer", isVerified: true });
-
     const today = new Date();
-    const activeSubscriptions = await Subscription.countDocuments({
-      status: "ACTIVE",
-      endDate: { $gte: today },
-    });
-
-    // Revenue calculations (all completed payments)
-    const completedPayments = await Payment.find({ status: "COMPLETED" });
-    const totalRevenueETB = completedPayments.reduce((sum, p) => sum + (p.amountETB || 0), 0);
-
-    const cashRevenueETB = completedPayments
-      .filter((p) => p.provider === "CASH")
-      .reduce((sum, p) => sum + (p.amountETB || 0), 0);
-
-    const onlineRevenueETB = completedPayments
-      .filter((p) => p.provider === "CHAPA")
-      .reduce((sum, p) => sum + (p.amountETB || 0), 0);
-
-    // Recent scans & check-ins
-    const recentScans = await ScanLog.find().sort({ scannedAt: -1 }).limit(10);
-
-    // Recent payments
-    const recentPayments = await Payment.find()
-      .populate("userId", "username fullName email memberId")
-      .sort({ createdAt: -1 })
-      .limit(10);
-
-    // Memberships expiring within 7 days
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const expiringSoon = await Subscription.find({
-      status: "ACTIVE",
-      endDate: { $gte: today, $lte: nextWeek },
-    })
-      .populate("userId", "fullName username phone memberId")
-      .sort({ endDate: 1 });
+    // Parallelize all indexed counts, aggregations, and limit queries
+    const [
+      totalMembers,
+      verifiedMembers,
+      activeSubscriptions,
+      revenueAgg,
+      recentScans,
+      recentPayments,
+      expiringSoon,
+    ] = await Promise.all([
+      // Count customers
+      User.countDocuments({ role: "customer" }),
+      // Count verified customers
+      User.countDocuments({ role: "customer", isVerified: true }),
+      // Count active valid subscriptions
+      Subscription.countDocuments({
+        status: "ACTIVE",
+        endDate: { $gte: today },
+      }),
+      // Aggregate completed revenue grouped by provider directly in MongoDB
+      Payment.aggregate([
+        { $match: { status: "COMPLETED" } },
+        {
+          $group: {
+            _id: "$provider",
+            total: { $sum: "$amountETB" },
+          },
+        },
+      ]),
+      // Recent scans (indexed by scannedAt: -1)
+      ScanLog.find().sort({ scannedAt: -1 }).limit(10).lean(),
+      // Recent payments (indexed by createdAt: -1)
+      Payment.find()
+        .populate("userId", "username fullName email memberId")
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+      // Memberships expiring in 7 days (indexed by status + endDate)
+      Subscription.find({
+        status: "ACTIVE",
+        endDate: { $gte: today, $lte: nextWeek },
+      })
+        .populate("userId", "fullName username phone memberId")
+        .sort({ endDate: 1 })
+        .limit(10)
+        .lean(),
+    ]);
+
+    let cashRevenueETB = 0;
+    let onlineRevenueETB = 0;
+    for (const r of revenueAgg) {
+      if (r._id === "CASH") cashRevenueETB = r.total || 0;
+      if (r._id === "CHAPA") onlineRevenueETB = r.total || 0;
+    }
+    const totalRevenueETB = cashRevenueETB + onlineRevenueETB;
 
     return NextResponse.json({
       success: true,

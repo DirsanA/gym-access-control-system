@@ -6,39 +6,149 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectDB();
-    const users = await User.find({ role: "customer" }).sort({ createdAt: -1 });
+
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10", 10)));
+    const search = searchParams.get("search")?.trim() || searchParams.get("query")?.trim() || "";
+    const filterStatus = (searchParams.get("status") || "ALL").toUpperCase(); // ALL, ACTIVE, EXPIRED
+    const all = searchParams.get("all") === "true"; // Backward compatibility fallback
 
     const today = new Date();
 
-    // Map each customer with active subscription details
-    const members = await Promise.all(
-      users.map(async (u) => {
-        const sub = await Subscription.findOne({ userId: u._id, status: "ACTIVE" }).sort({ endDate: -1 });
-        const isActive = !u.isSuspended && !!sub && sub.endDate >= today;
+    // Fast indexed match on customer accounts
+    const userMatch: any = { role: "customer" };
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      userMatch.$or = [
+        { fullName: regex },
+        { memberId: regex },
+        { phone: regex },
+        { email: regex },
+        { username: regex },
+      ];
+    }
 
-        return {
-          memberId: u.memberId || `GYM-${u._id.toString().slice(-6).toUpperCase()}`,
-          fullName: u.fullName || u.username,
-          phone: u.phone,
-          email: u.email,
-          gender: u.gender || "OTHER",
-          membershipPlan: sub?.planName || "No Active Plan",
-          membershipStartDate: sub ? sub.startDate.toISOString().slice(0, 10) : u.createdAt.toISOString().slice(0, 10),
-          membershipEndDate: sub ? sub.endDate.toISOString().slice(0, 10) : u.createdAt.toISOString().slice(0, 10),
-          profileImage: u.photoUrl || null,
-          isActive,
-          createdAt: u.createdAt.toISOString(),
-          isVerified: u.isVerified,
-          isSuspended: u.isSuspended,
-          userId: u._id.toString(),
-        };
-      })
-    );
+    // High performance aggregation pipeline that eliminates N+1 queries
+    const pipeline: any[] = [
+      { $match: userMatch },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "subscriptions",
+          let: { uid: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$userId", "$$uid"] },
+                    { $eq: ["$status", "ACTIVE"] },
+                  ],
+                },
+              },
+            },
+            { $sort: { endDate: -1 } },
+            { $limit: 1 },
+          ],
+          as: "activeSubscription",
+        },
+      },
+      {
+        $addFields: {
+          sub: { $arrayElemAt: ["$activeSubscription", 0] },
+        },
+      },
+      {
+        $addFields: {
+          computedIsActive: {
+            $and: [
+              { $eq: ["$isSuspended", false] },
+              { $gt: ["$sub", null] },
+              { $gte: ["$sub.endDate", today] },
+            ],
+          },
+        },
+      },
+    ];
 
-    return NextResponse.json({ success: true, members });
+    if (filterStatus === "ACTIVE") {
+      pipeline.push({ $match: { computedIsActive: true } });
+    } else if (filterStatus === "EXPIRED") {
+      pipeline.push({ $match: { computedIsActive: false } });
+    }
+
+    const facetStage: any = {
+      metadata: [{ $count: "total" }],
+    };
+
+    if (all) {
+      facetStage.data = [];
+    } else {
+      facetStage.data = [
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+      ];
+    }
+
+    pipeline.push({ $facet: facetStage });
+
+    // Execute aggregation and global counts in parallel
+    const [result, totalCustomers, totalActive] = await Promise.all([
+      User.aggregate(pipeline),
+      User.countDocuments({ role: "customer" }),
+      Subscription.countDocuments({ status: "ACTIVE", endDate: { $gte: today } }),
+    ]);
+
+    const rawItems = result[0]?.data || [];
+    const totalFiltered = result[0]?.metadata[0]?.total || 0;
+    const totalExpired = Math.max(0, totalCustomers - totalActive);
+
+    const members = rawItems.map((u: any) => {
+      const sub = u.sub;
+      const isActive = Boolean(u.computedIsActive);
+
+      return {
+        memberId: u.memberId || `GYM-${u._id.toString().slice(-6).toUpperCase()}`,
+        fullName: u.fullName || u.username,
+        phone: u.phone,
+        email: u.email,
+        gender: u.gender || "OTHER",
+        membershipPlan: sub?.planName || "No Active Plan",
+        membershipStartDate: sub ? new Date(sub.startDate).toISOString().slice(0, 10) : new Date(u.createdAt).toISOString().slice(0, 10),
+        membershipEndDate: sub ? new Date(sub.endDate).toISOString().slice(0, 10) : new Date(u.createdAt).toISOString().slice(0, 10),
+        profileImage: u.photoUrl || null,
+        isActive,
+        createdAt: new Date(u.createdAt).toISOString(),
+        isVerified: Boolean(u.isVerified),
+        isSuspended: Boolean(u.isSuspended),
+        userId: u._id.toString(),
+      };
+    });
+
+    const totalPages = all ? 1 : Math.max(1, Math.ceil(totalFiltered / limit));
+
+    return NextResponse.json({
+      success: true,
+      members,
+      pagination: {
+        page: all ? 1 : page,
+        limit: all ? totalFiltered : limit,
+        total: totalFiltered,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      counts: {
+        total: totalCustomers,
+        active: totalActive,
+        expired: totalExpired,
+      },
+    });
   } catch (error: any) {
     console.error("[MEMBERS_GET_ERROR]", error);
     return NextResponse.json({ success: false, message: error?.message || "Failed to load members." }, { status: 500 });

@@ -82,5 +82,10 @@ const PaymentSchema = new Schema<IPayment>(
   }
 );
 
+// High-performance revenue aggregation, status checks and ledger sorting
+PaymentSchema.index({ status: 1, provider: 1, amountETB: 1 });
+PaymentSchema.index({ createdAt: -1 });
+PaymentSchema.index({ userId: 1, createdAt: -1 });
+
 export const Payment: Model<IPayment> =
   mongoose.models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema);

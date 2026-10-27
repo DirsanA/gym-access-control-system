@@ -58,5 +58,10 @@ const TicketSchema = new Schema<ITicket>(
   }
 );
 
+// High-performance ticket validation and checkpoint checks
+TicketSchema.index({ memberId: 1, isRevoked: 1 });
+TicketSchema.index({ userId: 1, isRevoked: 1 });
+TicketSchema.index({ ticketToken: 1, isRevoked: 1 });
+
 export const Ticket: Model<ITicket> =
   mongoose.models.Ticket || mongoose.model<ITicket>("Ticket", TicketSchema);
