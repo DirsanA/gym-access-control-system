@@ -65,12 +65,22 @@ export async function POST(request: Request) {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedUsername = username.trim().toLowerCase();
 
-    // Check if an already VERIFIED user exists with this email or username
+    // Check if an already VERIFIED user exists with this email or username (with auto-retry on dropped socket)
     console.log(`[REGISTER] Step 2: Checking existing verified users for email: ${normalizedEmail}`);
-    const verifiedUser = await User.findOne({
-      $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
-      isVerified: true,
-    });
+    let verifiedUser = null;
+    try {
+      verifiedUser = await User.findOne({
+        $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+        isVerified: true,
+      });
+    } catch (queryErr: any) {
+      console.warn("[REGISTER] Initial query encountered connection glitch, reconnecting...", queryErr?.message);
+      await connectDB();
+      verifiedUser = await User.findOne({
+        $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+        isVerified: true,
+      });
+    }
 
     if (verifiedUser) {
       if (verifiedUser.email === normalizedEmail) {
