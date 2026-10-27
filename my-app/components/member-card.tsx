@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toDataURL } from "qrcode";
 import type { ScannerMember } from "@/types/scanner";
 
-type CardMember = ScannerMember & { phone?: string; createdAt?: string };
+type CardMember = ScannerMember & { phone?: string; createdAt?: string; qrPayload?: string; ticketToken?: string };
 
 const CARD_W = 1600;
 const CARD_H = 920;
@@ -28,13 +28,14 @@ export function MemberCard({ member }: { member: CardMember }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void toDataURL(member.memberId, {
+    const qrValue = member.qrPayload || member.ticketToken || member.memberId;
+    void toDataURL(qrValue, {
       width: 400,
       margin: 1,
       errorCorrectionLevel: "H",
       color: { dark: "#060b09", light: "#ffffff" },
     }).then(setQrDataUrl);
-  }, [member.memberId]);
+  }, [member.memberId, member.qrPayload, member.ticketToken]);
 
   const renderCard = useCallback(async (): Promise<HTMLCanvasElement> => {
     const canvas = document.createElement("canvas");

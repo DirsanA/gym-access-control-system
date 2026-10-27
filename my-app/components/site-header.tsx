@@ -53,9 +53,12 @@ export function SiteHeader() {
             </a>
           </nav>
 
-          {/* Right Button: Sign Up */}
+          {/* Right Button: Sign Up / Profile */}
           <div className="debug-nav-cta-wrap">
-            <Link className="debug-signup-btn" href="/admin/members/new">
+            <Link className="debug-nav-item" href="/login">
+              Sign In
+            </Link>
+            <Link className="debug-signup-btn" href="/register">
               Sign Up
             </Link>
 
@@ -105,7 +108,9 @@ export function SiteHeader() {
                 { href: "/#about", label: "About Us", sub: "Legacy & Facilities" },
                 { href: "/#services", label: "Services", sub: "Training & Turnstile QR" },
                 { href: "/#faq", label: "FAQ", sub: "Questions & Access" },
+                { href: "/profile", label: "Member Profile", sub: "Subscriptions & Digital Card" },
                 { href: "/scanner", label: "Entrance Scanner", sub: "Turnstile Live Check-in" },
+                { href: "/admin", label: "Admin Console", sub: "Management & Operations" },
               ].map(({ href, label, sub }, i) => {
                 const active = pathname === href;
                 return (
@@ -131,13 +136,18 @@ export function SiteHeader() {
 
           <div className="app-header__menu-foot">
             <Link
-              href="/admin/members/new"
+              href="/register"
               onClick={close}
               className="app-header__menu-cta"
             >
               <span>Sign Up / Register Member</span>
               <ArrowUpRight size={16} />
             </Link>
+            <div className="mt-2 text-center">
+              <Link href="/login" onClick={close} className="text-xs text-gray-400 hover:text-white">
+                Already registered? <span className="text-[#ff331e] font-bold">Sign In</span>
+              </Link>
+            </div>
             <div className="app-header__menu-meta">
               <span>ADDIS ABABA, ETHIOPIA</span>
               <span>•</span>

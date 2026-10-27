@@ -1,34 +1,101 @@
-# Nexus Athletic Club — Vercel demo
+# Elite Fitness Club — Full-Stack Gym Management & Turnstile System
 
-This is a single Next.js application: its screens and mock API live together in this folder. There is no separate Express server, MongoDB database, or `NEXT_PUBLIC_API_URL` required for the demo.
+Elite Fitness is an athletic club management system built with Next.js, TypeScript, MongoDB, Brevo SMTP email verification, and Chapa Ethiopian Birr (ETB) payments.
 
-## Run locally
+## Architecture & Features
 
-From the repository root:
+1. **Authentication & Email OTP Verification**:
+   - Customer registration with validation for unique usernames and normalized email addresses.
+   - Cryptographically random 6-digit OTP delivery via Brevo (Sendinblue) SMTP (`smtp-relay.brevo.com:587`).
+   - Secure SHA-256 hashed OTP verification with auto-expiry (TTL) and rate-limiting.
+   - HTTP-only, secure JWT cookie-based session management.
 
-```powershell
-pnpm.cmd --filter my-app dev
+2. **Customer Portal & Dashboard (`/profile`)**:
+   - Live membership status, validity dates, and account verification badge.
+   - Dynamic plan catalog in Ethiopian Birr (ETB) with features breakdown.
+   - Digital membership pass presentation with real-time QR code generation.
+   - Chapa payment gateway checkout & payment history.
+
+3. **Payments & Checkout**:
+   - **Online via Chapa**: Server-side checkout initialization (`/api/payments/chapa/initialize`) and verification (`/api/payments/chapa/verify`).
+   - **Cash Payments**: Front desk cash collection recorded by authorized admins (`/api/admin/payments/cash`) with full audit history.
+   - Idempotent membership activation with expiration extensions for consecutive renewals.
+
+4. **Digital Pass & Entrance QR Scanner (`/scanner`)**:
+   - Opaque, unpredictable ticket tokens (`TKT-...`) stored securely in MongoDB.
+   - High-contrast downloadable printable cards with canvas rendering.
+   - Real turnstile camera scanner (`jsQR`) with instant visual and audio pass validation, failing closed on expired, revoked, or unpaid memberships.
+   - Automatic entrance scan logging in `ScanLog` collection.
+
+5. **Role-Protected Admin Console (`/admin`)**:
+   - Real-time revenue metrics (Total ETB, Cash ETB, Online Chapa ETB).
+   - Member directory with instant search, filtering, and manual enrollment.
+   - 1-Click cash payment recording and membership activation modal.
+   - Real-time gate scan attendance audit logs.
+   - Membership expiry tracking (&le; 7 days).
+
+---
+
+## Local Development Setup
+
+### 1. Environment Configuration
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
 ```
 
-Open `http://localhost:3000`.
+Configure your variables in `.env`:
 
-- `/scanner` — member entrance scanner. Try `GYM-000123` (active) and `GYM-000124` (expired).
-- `/admin/members/new` — admin form that creates a mock member and assigns a Gym ID. Newly registered members are also saved in that browser so they can be scanned straight away.
+```env
+# MongoDB Database
+MONGODB_URI=mongodb://127.0.0.1:27017/elite_fitness
 
-On supported mobile browsers, **Scan with phone camera** reads QR/barcode values and shows the exact decoded code before it checks membership. HTTPS is required for camera access (Vercel provides it).
+# Authentication Secret
+JWT_SECRET=your_super_secret_jwt_key_elite_fitness_at_least_32_chars
 
-## Deploy on Vercel
+# Application URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-1. Import this repository into Vercel.
-2. Set **Root Directory** to `my-app`.
-3. Keep the default Next.js build settings and deploy.
+# Brevo (Sendinblue) SMTP
+BREVO_SMTP_HOST=smtp-relay.brevo.com
+BREVO_SMTP_PORT=587
+BREVO_SMTP_USER=your_brevo_smtp_user
+BREVO_SMTP_PASS=your_brevo_smtp_password
+BREVO_FROM_EMAIL=no-reply@elitefitness.et
+BREVO_FROM_NAME="Elite Fitness Club"
 
-The API route handlers are located under `app/api`, therefore Vercel deploys frontend and backend together as one project.
+# Chapa Payment Gateway
+CHAPA_SECRET_KEY=CHASECK_TEST-xxxx
+CHAPA_PUBLIC_KEY=CHAPUBK_TEST-xxxx
+CHAPA_WEBHOOK_SECRET=your_chapa_webhook_secret
 
-## Fast scanner lookups
+# Initial Admin Account (Seeded on first run)
+INITIAL_ADMIN_USERNAME=admin
+INITIAL_ADMIN_EMAIL=admin@elitefitness.et
+INITIAL_ADMIN_PASSWORD=AdminElite2026!
+INITIAL_ADMIN_PHONE=+251911223344
+```
 
-The mock member store uses direct member-ID and phone indexes. The entrance scanner therefore finds a member by ID without looping through all records. See [`docs/data-performance.md`](docs/data-performance.md) for the production database indexes to create when you connect a persistent database.
+### 2. Database Seeding
 
-## Important mock-data note
+Run the seed script to initialize default ETB membership plans and the first administrator:
 
-Members are intentionally stored in process memory in `lib/mock-gym-data.ts`. They can reset when a Vercel serverless function restarts, and are not appropriate for real member data. Use a persistent database (for example Vercel Postgres, Neon, or MongoDB Atlas) and authentication before production use.
+```bash
+npx tsx scripts/seed.ts
+```
+
+### 3. Run Development Server
+
+```bash
+npm run dev
+```
+
+Visit:
+- `http://localhost:3000` — Landing page
+- `http://localhost:3000/register` — Customer sign up & OTP verification
+- `http://localhost:3000/login` — Sign in
+- `http://localhost:3000/profile` — Customer portal & active digital pass
+- `http://localhost:3000/scanner` — Turnstile entrance QR scanner
+- `http://localhost:3000/admin` — Operations console & cash recording

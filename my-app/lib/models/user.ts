@@ -1,0 +1,81 @@
+import mongoose, { Document, Model, Schema } from "mongoose";
+
+export interface IUser extends Document {
+  username: string;
+  email: string;
+  phone: string;
+  fullName?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  passwordHash: string;
+  role: "customer" | "admin";
+  isVerified: boolean;
+  isSuspended: boolean;
+  memberId?: string; // GYM-000123 format when member pass or subscription is granted
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const UserSchema = new Schema<IUser>(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      minlength: 3,
+      maxlength: 30,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    fullName: {
+      type: String,
+      trim: true,
+    },
+    gender: {
+      type: String,
+      enum: ["MALE", "FEMALE", "OTHER"],
+    },
+    passwordHash: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["customer", "admin"],
+      default: "customer",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    memberId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
