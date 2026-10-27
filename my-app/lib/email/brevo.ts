@@ -8,24 +8,25 @@ const fromEmail = process.env.BREVO_FROM_EMAIL || "no-reply@elitefitness.et";
 const fromName = process.env.BREVO_FROM_NAME || "Elite Fitness Club";
 
 // Reusable nodemailer transporter instance
-let transporter: nodemailer.Transporter | null = null;
-
 function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user,
-        pass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-  }
-  return transporter;
+  const currentPort = Number(process.env.BREVO_SMTP_PORT) || 2525;
+  const currentUser = process.env.BREVO_SMTP_USER || "";
+  const currentPass = process.env.BREVO_SMTP_PASS || "";
+  const currentHost = process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com";
+
+  return nodemailer.createTransport({
+    host: currentHost,
+    port: currentPort,
+    secure: currentPort === 465,
+    auth: {
+      user: currentUser,
+      pass: currentPass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,
+  });
 }
 
 export async function sendOtpEmail(to: string, otp: string, username: string): Promise<boolean> {
