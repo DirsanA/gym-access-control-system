@@ -88,46 +88,61 @@ export function SiteHeader() {
         />
         <div className="app-header__menu-panel">
           <div className="app-header__menu-head">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#ff3b30]" />
-              <b>NAVIGATION</b>
+            <div className="app-header__menu-brand">
+              <span className="app-header__menu-badge">IB</span>
+              <span className="app-header__menu-brandname">DeBug Club</span>
             </div>
-            <button type="button" onClick={close} aria-label="Close menu">
+            <button type="button" className="app-header__menu-close" onClick={close} aria-label="Close menu">
               <X size={18} />
             </button>
           </div>
 
-          <div className="app-header__menu-links">
-            {[...navLinks, { href: "/scanner", label: "Entrance Scanner" }].map(
-              ({ href, label }, i) => {
+          <div className="app-header__menu-body">
+            <div className="app-header__menu-section-label">MENU</div>
+            <div className="app-header__menu-links">
+              {[
+                { href: "/", label: "Home", sub: "Hero & Overview" },
+                { href: "/#about", label: "About Us", sub: "Legacy & Facilities" },
+                { href: "/#services", label: "Services", sub: "Training & Turnstile QR" },
+                { href: "/#faq", label: "FAQ", sub: "Questions & Access" },
+                { href: "/scanner", label: "Entrance Scanner", sub: "Turnstile Live Check-in" },
+              ].map(({ href, label, sub }, i) => {
                 const active = pathname === href;
                 return (
                   <Link
                     key={href}
                     href={href}
                     onClick={close}
-                    className={active ? "is-active" : ""}
+                    className={`app-header__menu-link ${active ? "is-active" : ""}`}
                   >
-                    <span className="app-header__menu-idx">0{i + 1}</span>
-                    <b>{label}</b>
-                    <ArrowUpRight className="app-header__menu-arrow" />
+                    <div className="app-header__menu-link-left">
+                      <span className="app-header__menu-num">0{i + 1}</span>
+                      <div className="app-header__menu-info">
+                        <span className="app-header__menu-title">{label}</span>
+                        <span className="app-header__menu-sub">{sub}</span>
+                      </div>
+                    </div>
+                    <ArrowUpRight size={18} className="app-header__menu-arrow" />
                   </Link>
                 );
-              }
-            )}
+              })}
+            </div>
           </div>
 
           <div className="app-header__menu-foot">
             <Link
               href="/admin/members/new"
               onClick={close}
-              className="debug-signup-btn text-center justify-center w-full"
+              className="app-header__menu-cta"
             >
-              Sign up / New Member
+              <span>Sign Up / Register Member</span>
+              <ArrowUpRight size={16} />
             </Link>
-            <p className="mt-3 text-center text-xs text-gray-500">
-              DEBUG ATHLETIC CLUB · ACCESS & PASSES
-            </p>
+            <div className="app-header__menu-meta">
+              <span>ADDIS ABABA, ETHIOPIA</span>
+              <span>•</span>
+              <span>24/7 ENTRANCE</span>
+            </div>
           </div>
         </div>
       </div>
