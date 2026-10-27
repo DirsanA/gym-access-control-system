@@ -26,18 +26,21 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 20000,
+      connectTimeoutMS: 20000,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+      console.log("[MONGODB] Connected to database successfully.");
       return m;
     });
   }
 
   try {
     cached.conn = await cached.promise;
-  } catch (e) {
+  } catch (e: any) {
     cached.promise = null;
+    console.error("[MONGODB ERROR] Connection failed:", e?.message || e);
     throw e;
   }
 

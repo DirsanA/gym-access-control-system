@@ -1,43 +1,76 @@
 import nodemailer from "nodemailer";
 
-const host = process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com";
-const port = Number(process.env.BREVO_SMTP_PORT) || 587;
-const user = process.env.BREVO_SMTP_USER || "";
-const pass = process.env.BREVO_SMTP_PASS || "";
-const fromEmail = process.env.BREVO_FROM_EMAIL || "no-reply@elitefitness.et";
-const fromName = process.env.BREVO_FROM_NAME || "Elite Fitness Club";
+function cleanEnv(val: string | undefined, defaultVal = ""): string {
+  if (!val) return defaultVal;
+  let clean = val.trim();
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1).trim();
+  }
+  return clean;
+}
 
-// Reusable nodemailer transporter instance
-function getTransporter() {
-  const currentPort = Number(process.env.BREVO_SMTP_PORT) || 2525;
-  const currentUser = process.env.BREVO_SMTP_USER || "";
-  const currentPass = process.env.BREVO_SMTP_PASS || "";
-  const currentHost = process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com";
+function getSmtpConfig() {
+  const host = cleanEnv(process.env.BREVO_SMTP_HOST, "smtp-relay.brevo.com");
+  const port = Number(cleanEnv(process.env.BREVO_SMTP_PORT, "2525")) || 2525;
+  const user = cleanEnv(process.env.BREVO_SMTP_USER);
+  const pass = cleanEnv(process.env.BREVO_SMTP_PASS);
+  const fromEmail = cleanEnv(process.env.BREVO_FROM_EMAIL) || user || "no-reply@elitefitness.et";
+  const fromName = cleanEnv(process.env.BREVO_FROM_NAME, "Elite Fitness Club");
 
+  return { host, port, user, pass, fromEmail, fromName };
+}
+
+function createTransporter(host: string, port: number, user: string, pass: string) {
   return nodemailer.createTransport({
-    host: currentHost,
-    port: currentPort,
-    secure: currentPort === 465,
+    host,
+    port,
+    secure: port === 465,
     auth: {
-      user: currentUser,
-      pass: currentPass,
+      user,
+      pass,
     },
     tls: {
       rejectUnauthorized: false,
     },
-    connectionTimeout: 10000,
+    connectionTimeout: 25000,
+    greetingTimeout: 20000,
+    socketTimeout: 25000,
   });
 }
 
-export async function sendOtpEmail(to: string, otp: string, username: string): Promise<boolean> {
-  // If SMTP credentials aren't configured yet in production, log safely for dev environment
-  if (!user || !pass) {
-    console.warn(`[BREVO SMTP WARNING] SMTP credentials not set. Dev OTP for ${to}: [${otp}]`);
-    return true;
+export interface SendOtpResult {
+  success: boolean;
+  messageId?: string;
+  response?: string;
+  error?: string;
+}
+
+export async function sendOtpEmail(to: string, otp: string, username: string): Promise<SendOtpResult> {
+  const config = getSmtpConfig();
+
+  console.log("\n==================== [BREVO SMTP DISPATCH START] ====================");
+  console.log("[BREVO SMTP] Recipient Email :", to);
+  console.log("[BREVO SMTP] Athlete Name    :", username);
+  console.log("[BREVO SMTP] OTP Code        :", otp);
+  console.log("[BREVO SMTP] Target Host     :", config.host);
+  console.log("[BREVO SMTP] Target Port     :", config.port);
+  console.log("[BREVO SMTP] Sender Identity :", `"${config.fromName}" <${config.fromEmail}>`);
+  console.log("[BREVO SMTP] SMTP User       :", config.user || "(MISSING)");
+  console.log("[BREVO SMTP] SMTP Pass Status:", config.pass ? `Configured (${config.pass.length} chars)` : "(MISSING)");
+
+  if (!config.user || !config.pass) {
+    const errorMsg = "Brevo SMTP credentials (BREVO_SMTP_USER or BREVO_SMTP_PASS) are missing in environment.";
+    console.warn("[BREVO SMTP WARNING]", errorMsg);
+    console.warn(`[DEV FALLBACK] Verification code for ${to} is: [${otp}]`);
+    console.log("==================== [BREVO SMTP DISPATCH END] ====================\n");
+    return {
+      success: true, // Allow dev fallback so flow is not blocked
+      error: errorMsg,
+    };
   }
 
   const mailOptions = {
-    from: `"${fromName}" <${fromEmail}>`,
+    from: `"${config.fromName}" <${config.fromEmail}>`,
     to,
     subject: `Your Elite Fitness Verification Code: ${otp}`,
     text: `Hello ${username},\n\nYour Elite Fitness account verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this code, please ignore this email.\n\nElite Fitness Athletic Club - Addis Ababa, Ethiopia`,
@@ -75,17 +108,56 @@ export async function sendOtpEmail(to: string, otp: string, username: string): P
     `,
   };
 
+  // Primary attempt on configured port (2525)
   try {
-    const client = getTransporter();
-    await client.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error("[BREVO SMTP ERROR]", error);
-    // Allow graceful fallback in local dev without breaking registration flow
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`[DEV FALLBACK] Proceeding despite SMTP failure. Code: ${otp}`);
-      return true;
+    console.log(`[BREVO SMTP] Connecting to ${config.host}:${config.port}...`);
+    const client = createTransporter(config.host, config.port, config.user, config.pass);
+    const info = await client.sendMail(mailOptions);
+
+    console.log("[BREVO SMTP SUCCESS] >>> EMAIL DISPATCHED & ACCEPTED BY BREVO! <<<");
+    console.log("[BREVO SMTP SUCCESS] Message ID:", info.messageId);
+    console.log("[BREVO SMTP SUCCESS] Accepted  :", JSON.stringify(info.accepted));
+    console.log("[BREVO SMTP SUCCESS] Response  :", info.response);
+    console.log("==================== [BREVO SMTP DISPATCH END] ====================\n");
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      response: info.response,
+    };
+  } catch (error: any) {
+    console.error(`[BREVO SMTP ERROR] Primary delivery on port ${config.port} failed:`);
+    console.error("[BREVO SMTP ERROR] Code   :", error.code);
+    console.error("[BREVO SMTP ERROR] Command:", error.command);
+    console.error("[BREVO SMTP ERROR] Message:", error.message);
+    if (error.response) console.error("[BREVO SMTP ERROR] Response:", error.response);
+
+    // If port 2525 failed and fallback port 587 is available, attempt fallback once
+    const fallbackPort = config.port === 2525 ? 587 : 2525;
+    try {
+      console.log(`[BREVO SMTP] Retrying transmission on alternate port ${fallbackPort}...`);
+      const fallbackClient = createTransporter(config.host, fallbackPort, config.user, config.pass);
+      const fallbackInfo = await fallbackClient.sendMail(mailOptions);
+
+      console.log(`[BREVO SMTP SUCCESS] >>> EMAIL DELIVERED ON ALTERNATE PORT ${fallbackPort}! <<<`);
+      console.log("[BREVO SMTP SUCCESS] Message ID:", fallbackInfo.messageId);
+      console.log("[BREVO SMTP SUCCESS] Accepted  :", JSON.stringify(fallbackInfo.accepted));
+      console.log("==================== [BREVO SMTP DISPATCH END] ====================\n");
+
+      return {
+        success: true,
+        messageId: fallbackInfo.messageId,
+        response: fallbackInfo.response,
+      };
+    } catch (fallbackError: any) {
+      console.error(`[BREVO SMTP ERROR] Alternate port ${fallbackPort} also failed:`, fallbackError.message);
+      console.warn(`[DEV FALLBACK] Verification code for ${to}: [${otp}]`);
+      console.log("==================== [BREVO SMTP DISPATCH END] ====================\n");
+
+      return {
+        success: process.env.NODE_ENV !== "production",
+        error: error.message || fallbackError.message || "Failed to deliver email",
+      };
     }
-    return false;
   }
 }
