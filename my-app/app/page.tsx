@@ -138,7 +138,7 @@ export default function Home() {
             <div className="debug-about__copy">
               <div className="debug-pill">
                 <span className="debug-pill__dot" />
-                <span>ABOUT DEBUG ATHLETIC</span>
+                <span>ABOUT ELITE FITNESS</span>
               </div>
 
               <h2 className="debug-section__title">
@@ -147,7 +147,7 @@ export default function Home() {
               </h2>
 
               <p className="debug-section__desc">
-                Founded with a relentless commitment to high performance, DeBug is more than a gym—it is an athletic sanctuary. We fuse cutting-edge biomechanics with frictionless digital access control so your focus remains strictly on your progression.
+                Founded with a relentless commitment to high performance, Elite Fitness is more than a gym—it is an athletic sanctuary. We fuse cutting-edge biomechanics with frictionless digital access control so your focus remains strictly on your progression.
               </p>
 
               <div className="debug-feature-cards">
@@ -298,7 +298,7 @@ export default function Home() {
               </div>
               <h2 className="debug-section__title">
                 Everything You Need<br />
-                <em>To Know About DeBug.</em>
+                <em>To Know About Elite Fitness.</em>
               </h2>
               <p className="debug-section__desc mb-8">
                 Got questions on memberships, our contactless digital pass, or club facilities? Find clear answers below or visit our front desk.
@@ -341,7 +341,7 @@ export default function Home() {
                   <span className="debug-faq-arrow">▼</span>
                 </summary>
                 <div className="debug-faq-answer">
-                  DeBug is open Monday to Sunday from 05:00 to 23:00. Peak hours are generally 06:30 - 08:30 and 17:30 - 20:00. Contactless access turnstiles are operational throughout all operating hours.
+                  Elite Fitness is open Monday to Sunday from 05:00 to 23:00. Peak hours are generally 06:30 - 08:30 and 17:30 - 20:00. Contactless access turnstiles are operational throughout all operating hours.
                 </div>
               </details>
 
@@ -365,9 +365,9 @@ export default function Home() {
           <div className="debug-footer__brand">
             <Link className="debug-nav-logo inline-flex mb-4" href="/">
               <span className="debug-nav-logo__badge">
-                <span className="debug-nav-logo__monogram">IB</span>
+                <span className="debug-nav-logo__monogram">EF</span>
               </span>
-              <span className="debug-nav-logo__name">DeBug</span>
+              <span className="debug-nav-logo__name">Elite Fitness</span>
             </Link>
             <p className="debug-footer__desc">
               Stronger every day. The premier athletic training destination and contactless digital access ecosystem.
@@ -399,14 +399,14 @@ export default function Home() {
             <p className="mt-1">MON — SUN &bull; 05:00 - 23:00</p>
             <div className="mt-4">
               <Link href="/admin/members/new" className="debug-signup-btn text-xs">
-                Join DeBug Club
+                Join Elite Fitness
               </Link>
             </div>
           </div>
         </div>
 
         <div className="debug-footer__bottom">
-          <small>&copy; {new Date().getFullYear()} DEBUG ATHLETIC CLUB. ALL RIGHTS RESERVED.</small>
+          <small>&copy; {new Date().getFullYear()} ELITE FITNESS CLUB. ALL RIGHTS RESERVED.</small>
           <small className="text-gray-400">POWERED BY NEXT-GEN BIOMETRIC &amp; OPTICAL ACCESS</small>
         </div>
       </footer>

@@ -29,12 +29,12 @@ export function SiteHeader() {
     <>
       <header className="debug-nav-wrapper">
         <div className="debug-nav-capsule">
-          {/* Logo brand lockup: IB monogram / Dumbbell in circle */}
+          {/* Logo brand lockup: EF monogram */}
           <Link className="debug-nav-logo" href="/" onClick={close}>
             <span className="debug-nav-logo__badge">
-              <span className="debug-nav-logo__monogram">IB</span>
+              <span className="debug-nav-logo__monogram">EF</span>
             </span>
-            <span className="debug-nav-logo__name">DeBug</span>
+            <span className="debug-nav-logo__name">Elite Fitness</span>
           </Link>
 
           {/* Center Links */}
@@ -89,8 +89,8 @@ export function SiteHeader() {
         <div className="app-header__menu-panel">
           <div className="app-header__menu-head">
             <div className="app-header__menu-brand">
-              <span className="app-header__menu-badge">IB</span>
-              <span className="app-header__menu-brandname">DeBug Club</span>
+              <span className="app-header__menu-badge">EF</span>
+              <span className="app-header__menu-brandname">Elite Fitness</span>
             </div>
             <button type="button" className="app-header__menu-close" onClick={close} aria-label="Close menu">
               <X size={18} />
