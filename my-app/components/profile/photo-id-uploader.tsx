@@ -245,17 +245,24 @@ export function PhotoIdUploader({
 
       {/* POPUP MODAL: Upload or Snap Camera Photo */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md p-6 sm:p-7 rounded-3xl border border-white/15 bg-[#121216] shadow-2xl relative space-y-5">
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="w-full max-w-md my-auto p-5 sm:p-7 rounded-3xl border border-white/15 bg-[#121216] shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={handleCloseModal}
-              className="absolute top-5 right-5 text-gray-400 hover:text-white p-1 rounded-full bg-white/5"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-gray-400 hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10"
+              aria-label="Close modal"
             >
               <X size={18} />
             </button>
 
-            <div>
+            <div className="pr-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ff331e]/15 border border-[#ff331e]/30 text-[#ff4733] text-xs font-bold uppercase mb-2">
                 <Camera size={13} />
                 <span>ID Photo Authentication</span>
@@ -273,7 +280,7 @@ export function PhotoIdUploader({
             )}
 
             {/* PREVIEW / CAMERA VIEWPORT */}
-            <div className="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden border-2 border-white/20 bg-black flex items-center justify-center shadow-inner">
+            <div className="relative w-48 h-48 sm:w-56 sm:h-56 mx-auto rounded-3xl overflow-hidden border-2 border-white/20 bg-black flex items-center justify-center shadow-inner">
               {previewDataUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={previewDataUrl} alt="Preview" className="w-full h-full object-cover" />

@@ -572,14 +572,24 @@ export default function AdminDashboardPage() {
 
         {/* CASH RECORDING MODAL */}
         {cashModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-md max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#121216] p-5 sm:p-7 shadow-2xl relative">
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+            onClick={() => setCashModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#121216] p-5 sm:p-7 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <Banknote size={20} className="text-emerald-400" />
                   <h3 className="text-lg font-bold text-white">Record Cash Payment</h3>
                 </div>
-                <button onClick={() => setCashModalOpen(false)} className="text-gray-400 hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => setCashModalOpen(false)}
+                  className="text-gray-400 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>

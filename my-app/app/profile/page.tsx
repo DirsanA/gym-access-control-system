@@ -503,15 +503,25 @@ export default function ProfilePage() {
 
       {/* CHECKOUT PHOTO GATE MODAL: Enforce photo before paying */}
       {photoGateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-lg p-6 sm:p-8 rounded-3xl border border-[#ff331e]/30 bg-[#121216] shadow-2xl relative space-y-5">
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
+          onClick={() => {
+            setPhotoGateOpen(false);
+            setPendingPlanId(null);
+          }}
+        >
+          <div
+            className="w-full max-w-lg my-auto p-5 sm:p-8 rounded-3xl border border-[#ff331e]/30 bg-[#121216] shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => {
                 setPhotoGateOpen(false);
                 setPendingPlanId(null);
               }}
-              className="absolute top-5 right-5 text-gray-400 hover:text-white p-1 rounded-full bg-white/5"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-gray-400 hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10"
+              aria-label="Close modal"
             >
               <X size={18} />
             </button>
