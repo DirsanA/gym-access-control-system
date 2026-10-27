@@ -341,7 +341,7 @@ export function ScannerTerminal() {
 
   return (
     <main
-      className="min-h-screen bg-[#050608] py-8 sm:py-12 md:py-16 px-3 sm:px-4 flex flex-col items-center justify-center relative overflow-hidden select-none"
+      className="min-h-screen bg-[#050608] pt-24 sm:pt-28 md:pt-32 pb-12 sm:pb-16 px-3 sm:px-4 flex flex-col items-center relative overflow-x-hidden select-none"
       onClick={focusInput}
     >
       {/* Dynamic ambient background glow that shifts with entrance status */}
@@ -357,45 +357,7 @@ export function ScannerTerminal() {
         }`}
       />
 
-      <div className="w-full max-w-md sm:max-w-lg relative z-10 space-y-4">
-        {/* Top Mini Navigation Bar */}
-        <div className="flex items-center justify-between px-2 text-xs text-gray-400">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 hover:text-white transition-colors py-1"
-          >
-            <ArrowLeft size={14} />
-            <span>Home</span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSound();
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold transition-all ${
-                soundEnabled
-                  ? "bg-white/10 text-white border-white/20"
-                  : "bg-white/5 text-gray-500 border-white/10"
-              }`}
-              title="Toggle Audio Feedback"
-            >
-              {soundEnabled ? <Volume2 size={13} className="text-[#c2f83a]" /> : <VolumeX size={13} />}
-              <span>{soundEnabled ? "Audio ON" : "Muted"}</span>
-            </button>
-
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-gray-300 hover:text-white transition-all"
-            >
-              <Shield size={12} className="text-amber-400" />
-              <span>Admin</span>
-            </Link>
-          </div>
-        </div>
-
+      <div className="w-full max-w-md sm:max-w-lg relative z-10 space-y-4 my-auto">
         {/* MAIN TERMINAL CHASSIS */}
         <div
           className={`rounded-3xl border transition-all duration-300 bg-[#0d0f14]/90 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.6)] overflow-hidden ${
@@ -428,10 +390,30 @@ export function ScannerTerminal() {
               </div>
             </div>
 
-            {/* Live Indicator */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ONLINE</span>
+            {/* Hardware Controls: Sound Toggle + Online Badge */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSound();
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all ${
+                  soundEnabled
+                    ? "bg-white/10 text-white border-white/20 hover:bg-white/15"
+                    : "bg-white/5 text-gray-400 border-white/10 hover:text-white"
+                }`}
+                title="Toggle Audio Feedback"
+                aria-label="Toggle Audio Feedback"
+              >
+                {soundEnabled ? <Volume2 size={12} className="text-[#c2f83a]" /> : <VolumeX size={12} />}
+                <span className="hidden sm:inline">{soundEnabled ? "Audio ON" : "Muted"}</span>
+              </button>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>ONLINE</span>
+              </div>
             </div>
           </div>
 
@@ -774,10 +756,22 @@ export function ScannerTerminal() {
           </div>
         </div>
 
-        {/* Turnstile Safety Disclaimer */}
-        <p className="text-center text-[11px] text-gray-500 leading-relaxed px-4">
-          Contactless Turnstile System &bull; Single patron entry per optical QR scan &bull; Automated barrier reset
-        </p>
+        {/* Turnstile Safety Disclaimer & Navigation */}
+        <div className="text-center space-y-2 px-4">
+          <p className="text-[11px] text-gray-500 leading-relaxed">
+            Contactless Turnstile System &bull; Single patron entry per optical QR scan &bull; Automated barrier reset
+          </p>
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+            <Link href="/" className="hover:text-white transition-colors">
+              &larr; Back to Home
+            </Link>
+            <span className="text-gray-600">&bull;</span>
+            <Link href="/admin" className="hover:text-amber-400 text-gray-400 transition-colors flex items-center gap-1">
+              <Shield size={12} className="text-amber-400" />
+              <span>Admin Console</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );

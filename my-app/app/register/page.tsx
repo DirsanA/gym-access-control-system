@@ -140,8 +140,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#040405] pt-28 pb-16 px-4 flex items-center justify-center">
-      <div className="w-full max-w-xl">
+    <main className="min-h-screen bg-[#040405] pt-24 sm:pt-28 pb-12 sm:pb-16 px-4 flex flex-col items-center">
+      <div className="w-full max-w-xl my-auto">
         <div className="mb-6 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors">
             <ArrowLeft size={16} />
