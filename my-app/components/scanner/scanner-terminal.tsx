@@ -121,6 +121,7 @@ export function ScannerTerminal() {
   const [cameraOn, setCameraOn] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [resetCountdown, setResetCountdown] = useState(RESET_DELAY_MS / 1000);
+  const [mounted, setMounted] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -270,6 +271,7 @@ export function ScannerTerminal() {
   }, [stopCamera]);
 
   useEffect(() => {
+    setMounted(true);
     // Automatically purge any stale mock member entries from localStorage
     try {
       const keys = Object.keys(window.localStorage);
@@ -488,8 +490,8 @@ export function ScannerTerminal() {
                       </div>
                       <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
                         <span className="text-[10px] text-gray-400 block">CHECK-IN</span>
-                        <span className="text-xs font-mono font-bold text-emerald-400">
-                          {formatDateTime(new Date()).time}
+                        <span className="text-xs font-mono font-bold text-emerald-400" suppressHydrationWarning>
+                          {clock.time}
                         </span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
@@ -747,7 +749,9 @@ export function ScannerTerminal() {
             </div>
             <div className="flex items-center gap-2">
               <Clock size={12} className="text-[#c2f83a]" />
-              <strong className="text-white font-bold">{clock.time}</strong>
+              <strong className="text-white font-bold" suppressHydrationWarning>
+                {mounted ? clock.time : "--:--:--"}
+              </strong>
               <span className="text-gray-500">EAT</span>
             </div>
           </div>
