@@ -144,6 +144,8 @@ export default function ProfilePage() {
       setPendingPlanId(null);
       void executeCheckout(planToBuy);
     }
+
+    router.refresh();
   }
 
   async function handleLogout() {
@@ -227,8 +229,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* SECTION 1: Member Photo Identification Uploader (Only for regular members) */}
-        {isAdmin ? (
+        {/* Admin Operational Banner */}
+        {isAdmin && (
           <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-amber-500/15 via-[#121216] to-[#0d0d10] border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -239,7 +241,7 @@ export default function ProfilePage() {
               </div>
               <h2 className="text-2xl font-extrabold text-white">Full Operations & Turnstile Control</h2>
               <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
-                You are logged in with administrative privileges. Member photo ID verification and turnstile pass checkout requirements are waived for your account. You can manage members, record manual cash memberships, view real-time turnstile attendance logs, and oversee the Addis Ababa hub.
+                You are logged in with administrative privileges. You can manage members, record manual cash memberships, view real-time turnstile attendance logs, and oversee the Addis Ababa hub.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full md:w-auto">
@@ -252,13 +254,22 @@ export default function ProfilePage() {
               </Link>
             </div>
           </div>
-        ) : (
-          <PhotoIdUploader
-            currentPhotoUrl={user.photoUrl}
-            memberName={user.fullName || user.username}
-            onPhotoSaved={handlePhotoSaved}
-          />
         )}
+
+        {/* Member & Administrator Photo Identification Uploader */}
+        <PhotoIdUploader
+          currentPhotoUrl={user.photoUrl}
+          memberName={user.fullName || user.username}
+          onPhotoSaved={handlePhotoSaved}
+          isOpen={photoGateOpen ? true : undefined}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPhotoGateOpen(false);
+              setPendingPlanId(null);
+            }
+          }}
+          requiredForCheckout={photoGateOpen}
+        />
 
         {/* SECTION 2: Active Pass & Card Presentation */}
         {hasActiveMembership && memberPassData ? (
@@ -500,53 +511,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* CHECKOUT PHOTO GATE MODAL: Enforce photo before paying */}
-      {photoGateOpen && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
-          onClick={() => {
-            setPhotoGateOpen(false);
-            setPendingPlanId(null);
-          }}
-        >
-          <div
-            className="w-full max-w-lg my-auto p-5 sm:p-8 rounded-3xl border border-[#ff331e]/30 bg-[#121216] shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setPhotoGateOpen(false);
-                setPendingPlanId(null);
-              }}
-              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-gray-400 hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10"
-              aria-label="Close modal"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center space-y-2">
-              <div className="w-14 h-14 rounded-2xl bg-[#ff331e]/15 border border-[#ff331e]/30 text-[#ff4733] flex items-center justify-center mx-auto mb-3">
-                <Camera size={26} />
-              </div>
-              <h2 className="text-2xl font-extrabold text-white">Member Photo ID Required</h2>
-              <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
-                Before activating your pass, please add a portrait photo. Cashiers and turnstile attendants visually match this photo to verify your identity upon entry.
-              </p>
-            </div>
-
-            <div className="pt-2">
-              <PhotoIdUploader
-                currentPhotoUrl={user.photoUrl}
-                memberName={user.fullName || user.username}
-                onPhotoSaved={handlePhotoSaved}
-                requiredForCheckout={true}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { Payment, Plan, Subscription, Ticket, User } from "@/lib/models";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -57,28 +58,35 @@ export async function GET() {
           }
         : null;
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        fullName: user.fullName,
-        gender: user.gender,
-        role: user.role,
-        memberId: user.memberId,
-        photoUrl: user.photoUrl,
-        isVerified: user.isVerified,
-        isSuspended: user.isSuspended,
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone,
+          fullName: user.fullName,
+          gender: user.gender,
+          role: user.role,
+          memberId: user.memberId,
+          photoUrl: user.photoUrl || null,
+          isVerified: user.isVerified,
+          isSuspended: user.isSuspended,
+        },
+        hasActiveMembership: !!activeSubscription,
+        activeSubscription,
+        memberPassData,
+        allSubscriptions,
+        payments,
+        availablePlans,
       },
-      hasActiveMembership: !!activeSubscription,
-      activeSubscription,
-      memberPassData,
-      allSubscriptions,
-      payments,
-      availablePlans,
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("[PROFILE_DATA_ERROR]", error);
     return NextResponse.json({ success: false, message: error?.message || "Failed to load profile." }, { status: 500 });
@@ -101,9 +109,20 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, message: "User not found." }, { status: 404 });
     }
 
-    if (typeof fullName === "string" && fullName.trim()) user.fullName = fullName.trim();
-    if (typeof phone === "string" && phone.trim()) user.phone = phone.trim();
-    if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) user.gender = gender;
+    const updateFields: Record<string, any> = {};
+
+    if (typeof fullName === "string" && fullName.trim()) {
+      user.fullName = fullName.trim();
+      updateFields.fullName = fullName.trim();
+    }
+    if (typeof phone === "string" && phone.trim()) {
+      user.phone = phone.trim();
+      updateFields.phone = phone.trim();
+    }
+    if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {
+      user.gender = gender;
+      updateFields.gender = gender;
+    }
     
     if (typeof photoUrl === "string" && photoUrl.trim()) {
       let finalUrl = photoUrl.trim();
@@ -118,25 +137,37 @@ export async function PATCH(request: Request) {
         }
       }
       user.photoUrl = finalUrl;
+      updateFields.photoUrl = finalUrl;
     }
 
-    await user.save();
+    // Direct atomic persistence to MongoDB
+    if (Object.keys(updateFields).length > 0) {
+      await User.findByIdAndUpdate(user._id, { $set: updateFields });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: "Profile updated successfully.",
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        fullName: user.fullName,
-        gender: user.gender,
-        memberId: user.memberId,
-        photoUrl: user.photoUrl,
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Profile updated successfully.",
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone,
+          fullName: user.fullName,
+          gender: user.gender,
+          memberId: user.memberId,
+          photoUrl: user.photoUrl,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      }
+    );
   } catch (error: any) {
+    console.error("[PROFILE_UPDATE_ERROR]", error);
     return NextResponse.json({ success: false, message: error?.message || "Failed to update profile." }, { status: 500 });
   }
 }

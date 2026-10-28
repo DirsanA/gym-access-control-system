@@ -92,15 +92,12 @@ async function seed() {
     });
     console.log(`👑 Created initial Admin account: ${adminUsername} (${adminEmail})`);
   } else {
-    // Ensure role is admin
-    if (existingAdmin.role !== "admin" || !existingAdmin.isVerified) {
-      existingAdmin.role = "admin";
-      existingAdmin.isVerified = true;
-      await existingAdmin.save();
-      console.log(`👑 Updated existing account to verified Admin: ${existingAdmin.email}`);
-    } else {
-      console.log(`ℹ️ Admin account already exists: ${existingAdmin.email}`);
-    }
+    const salt = await bcrypt.genSalt(10);
+    existingAdmin.passwordHash = await bcrypt.hash(adminPassword, salt);
+    existingAdmin.role = "admin";
+    existingAdmin.isVerified = true;
+    await existingAdmin.save();
+    console.log(`👑 Synchronized and verified Admin credentials for: ${existingAdmin.email}`);
   }
 
   console.log("🚀 Database initialization complete!");

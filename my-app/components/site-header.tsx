@@ -49,8 +49,16 @@ export function SiteHeader() {
 
     void checkAuth();
 
+    const handlePhotoUpdated = (e: any) => {
+      if (e?.detail?.photoUrl) {
+        setCurrentUser((prev) => (prev ? { ...prev, photoUrl: e.detail.photoUrl } : prev));
+      }
+    };
+    window.addEventListener("profile-photo-updated", handlePhotoUpdated);
+
     return () => {
       isMounted = false;
+      window.removeEventListener("profile-photo-updated", handlePhotoUpdated);
     };
   }, [pathname]);
 
@@ -99,15 +107,15 @@ export function SiteHeader() {
             <Link href="/" className={`debug-nav-item ${pathname === "/" ? "is-active" : ""}`}>
               Home
             </Link>
-            <a href="/#about" className="debug-nav-item">
+            <Link href="/#about" className="debug-nav-item">
               About Us
-            </a>
-            <a href="/#services" className="debug-nav-item">
+            </Link>
+            <Link href="/#services" className="debug-nav-item">
               Service
-            </a>
-            <a href="/#faq" className="debug-nav-item">
+            </Link>
+            <Link href="/#faq" className="debug-nav-item">
               FAQ
-            </a>
+            </Link>
           </nav>
 
           {/* Right Action: Signed In Profile Capsule vs Sign In / Sign Up */}

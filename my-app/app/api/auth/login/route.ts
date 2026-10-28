@@ -26,10 +26,34 @@ export async function POST(request: Request) {
 
     const normalized = identifier.trim().toLowerCase();
 
+    const envAdminUser = (process.env.INITIAL_ADMIN_USERNAME || "admin").trim().toLowerCase();
+    const envAdminEmail = (process.env.INITIAL_ADMIN_EMAIL || "admin@elitefitness.et").trim().toLowerCase();
+    const envAdminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+
+    const isEnvAdminAttempt =
+      (normalized === envAdminUser || normalized === envAdminEmail) &&
+      Boolean(envAdminPassword && password === envAdminPassword);
+
     // Find by email or username
-    const user = await User.findOne({
+    let user = await User.findOne({
       $or: [{ email: normalized }, { username: normalized }],
     });
+
+    // Auto-provision admin if missing and matches .env
+    if (!user && isEnvAdminAttempt) {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+      user = await User.create({
+        username: envAdminUser,
+        email: envAdminEmail,
+        phone: process.env.INITIAL_ADMIN_PHONE || "+251911223344",
+        fullName: "Elite Fitness Administrator",
+        passwordHash,
+        role: "admin",
+        isVerified: true,
+        isSuspended: false,
+      });
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -39,7 +63,16 @@ export async function POST(request: Request) {
     }
 
     // Verify password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    let isMatch = await bcrypt.compare(password, user.passwordHash);
+
+    // If password matches INITIAL_ADMIN_PASSWORD in .env, automatically sync hash to DB
+    if (!isMatch && isEnvAdminAttempt && user.role === "admin") {
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(password, salt);
+      await user.save();
+      isMatch = true;
+    }
+
     if (!isMatch) {
       return NextResponse.json(
         { success: false, message: "Invalid credentials." },

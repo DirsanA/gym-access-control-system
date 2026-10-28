@@ -51,7 +51,7 @@ export async function activateMembership({
     endDate: { $gte: today },
   }).sort({ endDate: -1 });
 
-  let startDate = new Date();
+  const startDate = new Date();
   let baseEndDate = new Date();
 
   if (existingSub && existingSub.endDate > today) {

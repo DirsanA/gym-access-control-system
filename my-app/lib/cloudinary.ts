@@ -49,12 +49,18 @@ export async function uploadMemberPhotoToCloudinary(
     formData.append("signature", signature);
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
+
     const res = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
+      signal: controller.signal,
     }).catch((fetchErr: any) => {
-      console.warn("[CLOUDINARY_FETCH_WARNING] Network request to api.cloudinary.com failed:", fetchErr?.message);
+      console.warn("[CLOUDINARY_FETCH_WARNING] Network request to api.cloudinary.com timed out or failed:", fetchErr?.message);
       return null;
+    }).finally(() => {
+      clearTimeout(timeoutId);
     });
 
     if (!res) {
