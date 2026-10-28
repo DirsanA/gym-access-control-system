@@ -71,7 +71,6 @@ export default function NewMemberPage() {
         return;
       }
       setSuccess(data.member);
-      window.localStorage.setItem(`gym-mock-member:${data.member.memberId}`, JSON.stringify(data.member));
       event.currentTarget.reset();
       setStartDate(new Date().toISOString().slice(0, 10));
       setDuration("1");

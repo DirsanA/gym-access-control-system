@@ -222,7 +222,6 @@ export function AdminMemberManager() {
         setNotice(data?.message ?? "Unable to register this member.");
         return;
       }
-      window.localStorage.setItem(`gym-mock-member:${data.member.memberId}`, JSON.stringify(data.member));
       setAdding(false);
       setStartDate(new Date().toISOString().slice(0, 10));
       setDuration("1");

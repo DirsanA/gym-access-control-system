@@ -270,6 +270,18 @@ export function ScannerTerminal() {
   }, [stopCamera]);
 
   useEffect(() => {
+    // Automatically purge any stale mock member entries from localStorage
+    try {
+      const keys = Object.keys(window.localStorage);
+      keys.forEach((k) => {
+        if (k.startsWith("gym-mock-member")) {
+          window.localStorage.removeItem(k);
+        }
+      });
+    } catch {
+      // ignore
+    }
+
     const interval = window.setInterval(() => setNow(new Date()), 1_000);
     const setting = window.localStorage.getItem("gym-scanner-sound");
     setSoundEnabled(setting !== "off");
@@ -719,23 +731,9 @@ export function ScannerTerminal() {
                   )}
                 </form>
 
-                {/* Quick Test Demo Codes */}
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
-                  <span className="text-[10px] font-mono text-gray-500 uppercase w-full">TEST PRESETS:</span>
-                  <button
-                    type="button"
-                    onClick={() => void submitScan("GYM-000123")}
-                    className="px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 font-mono text-[11px] font-bold transition-all"
-                  >
-                    GYM-000123 &bull; Active
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void submitScan("GYM-000124")}
-                    className="px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-400 font-mono text-[11px] font-bold transition-all"
-                  >
-                    GYM-000124 &bull; Expired
-                  </button>
+                {/* Input helper guidance */}
+                <div className="pt-2 text-center text-[11px] text-gray-500 font-mono">
+                  <span>Supports: <strong>GYM-XXXXXX</strong> &bull; Phone <strong>09...</strong> &bull; Optical Pass</span>
                 </div>
               </div>
             )}
