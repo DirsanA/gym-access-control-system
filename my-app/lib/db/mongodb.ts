@@ -1,6 +1,17 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/elite_fitness";
+function getMongoUri(): string {
+  const uri = process.env.MONGODB_URI?.trim();
+  if (!uri) {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+      throw new Error(
+        "[MONGODB CONFIG ERROR] MONGODB_URI environment variable is missing! In Vercel, go to Project Settings -> Environment Variables, ensure MONGODB_URI is added for Production & Preview, and trigger a REDEPLOY."
+      );
+    }
+    return "mongodb://127.0.0.1:27017/elite_fitness";
+  }
+  return uri;
+}
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -56,21 +67,23 @@ export async function connectDB(): Promise<typeof mongoose> {
   attachListeners();
 
   if (!cached.promise) {
-    const opts = {
+    const uri = getMongoUri();
+    const isAtlas = uri.startsWith("mongodb+srv://") || uri.includes(".mongodb.net");
+
+    const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 30000,
-      connectTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
       minPoolSize: 1,
-      family: 4, // Force IPv4 to prevent IPv6 routing delays
       retryWrites: true,
       retryReads: true,
     };
 
-    console.log("[MONGODB] Establishing fresh connection to MongoDB Atlas...");
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-      console.log("[MONGODB] Connected to MongoDB Atlas cluster successfully.");
+    console.log(`[MONGODB] Establishing fresh connection to ${isAtlas ? "MongoDB Atlas" : "local MongoDB"}...`);
+    cached.promise = mongoose.connect(uri, opts).then((m) => {
+      console.log(`[MONGODB] Connected successfully to ${isAtlas ? "MongoDB Atlas cluster" : "local database"}.`);
       return m;
     });
   }
