@@ -213,15 +213,15 @@ export default function NewMemberPage() {
             </label>
 
             <label className="field-group">
-              <span className="field-label">Phone Number <span className="text-[#c2f83a]">*</span></span>
+              <span className="field-label">Phone Number (09... format) <span className="text-[#c2f83a]">*</span></span>
               <input
                 className="modern-input"
                 name="phone"
                 required
-                minLength={5}
+                minLength={9}
                 autoComplete="tel"
                 inputMode="tel"
-                placeholder="+251 91 123 4567"
+                placeholder="0911 234 567"
               />
             </label>
 

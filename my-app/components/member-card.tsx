@@ -28,7 +28,7 @@ export function MemberCard({ member }: { member: CardMember }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const qrValue = member.qrPayload || member.ticketToken || member.memberId;
+    const qrValue = member.memberId || member.qrPayload || member.ticketToken || "";
     void toDataURL(qrValue, {
       width: 400,
       margin: 1,

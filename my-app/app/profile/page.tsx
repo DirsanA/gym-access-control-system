@@ -48,11 +48,15 @@ export default function ProfilePage() {
   const [photoGateOpen, setPhotoGateOpen] = useState(false);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
-  async function loadProfile() {
+  async function loadProfile(retryCount = 0) {
     setLoading(true);
     try {
       const res = await fetch("/api/profile", { cache: "no-store" });
       if (res.status === 401) {
+        if (retryCount < 2) {
+          await new Promise((r) => setTimeout(r, 600));
+          return loadProfile(retryCount + 1);
+        }
         router.push("/login");
         return;
       }
@@ -431,10 +435,11 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Phone Number</label>
+                  <label className="block text-xs text-gray-400 mb-1">Phone Number (09... format)</label>
                   <input
-                    type="text"
+                    type="tel"
                     value={phone}
+                    placeholder="0911 234 567"
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full rounded-xl bg-white/5 border border-white/10 py-2 px-3 text-sm text-white"
                   />

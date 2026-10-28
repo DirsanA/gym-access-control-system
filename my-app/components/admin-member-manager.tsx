@@ -706,13 +706,13 @@ export function AdminMemberManager() {
               </label>
 
               <label className="field-group">
-                <span className="field-label">PHONE NUMBER</span>
+                <span className="field-label">PHONE NUMBER (09... FORMAT)</span>
                 <input
                   className="modern-input"
                   name="phone"
-                  minLength={5}
+                  minLength={9}
                   inputMode="tel"
-                  placeholder="+251 91 123 4567"
+                  placeholder="0911 234 567"
                   required
                   disabled={actionLoading}
                 />

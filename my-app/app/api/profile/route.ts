@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db/mongodb";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { uploadMemberPhotoToCloudinary } from "@/lib/cloudinary";
 import { Payment, Plan, Subscription, Ticket, User } from "@/lib/models";
 import { NextResponse } from "next/server";
@@ -54,7 +55,7 @@ export async function GET() {
             membershipEndDate: activeSubscription.endDate.toISOString().slice(0, 10),
             profileImage: user.photoUrl || null,
             ticketToken: ticket?.ticketToken,
-            qrPayload: ticket?.qrPayload || ticket?.ticketToken || user.memberId,
+            qrPayload: user.memberId || ticket?.ticketToken || "",
           }
         : null;
 
@@ -116,8 +117,9 @@ export async function PATCH(request: Request) {
       updateFields.fullName = fullName.trim();
     }
     if (typeof phone === "string" && phone.trim()) {
-      user.phone = phone.trim();
-      updateFields.phone = phone.trim();
+      const norm = normalizePhoneNumber(phone);
+      user.phone = norm;
+      updateFields.phone = norm;
     }
     if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {
       user.gender = gender;

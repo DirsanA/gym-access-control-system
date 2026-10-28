@@ -45,7 +45,21 @@ export async function POST(request: Request) {
     }
 
     const txRef = `TX-ELITE-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Dynamically resolve actual client origin so return_url matches the exact domain user is on
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const hostHeader = request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const originHeader = request.headers.get("origin");
+
+    let appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    if (originHeader && !originHeader.includes("localhost:3000")) {
+      appUrl = originHeader;
+    } else if (forwardedHost) {
+      appUrl = `${proto}://${forwardedHost}`;
+    } else if (hostHeader && !hostHeader.includes("localhost:3000")) {
+      appUrl = `${proto}://${hostHeader}`;
+    }
 
     const chapaSecret = process.env.CHAPA_SECRET_KEY || "";
 

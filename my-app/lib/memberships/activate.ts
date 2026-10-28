@@ -73,13 +73,9 @@ export async function activateMembership({
     paymentId: paymentId ? new mongoose.Types.ObjectId(paymentId.toString()) : undefined,
   });
 
-  // Generate or reissue digital ticket with opaque token
+  // Generate digital ticket with Member ID as QR payload so scanners paste clean ID
   const ticketToken = generateOpaqueToken("TKT");
-  const qrPayload = JSON.stringify({
-    memberId: user.memberId,
-    ticketToken,
-    club: "Elite Fitness Addis Ababa",
-  });
+  const qrPayload = user.memberId;
 
   // Revoke any previous tickets for safety
   await Ticket.updateMany(

@@ -61,9 +61,10 @@ function PaymentResultContent() {
             <div className="pt-4">
               <Link
                 href="/profile"
+                prefetch={false}
                 className="w-full inline-block py-3 rounded-full bg-[#ff331e] hover:bg-[#ff4733] text-white font-bold text-xs shadow-lg transition-all"
               >
-                View Your Digital Entrance Pass
+                View Your Digital Entrance Pass (Get Ticket)
               </Link>
             </div>
           </div>

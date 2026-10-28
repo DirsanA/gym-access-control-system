@@ -174,7 +174,6 @@ export function ScannerTerminal() {
       setScannerState("CHECKING");
 
       try {
-        await verifyMember(token);
         const recorded = await recordCheckIn(token);
         setFinalState(recorded);
       } catch {
@@ -663,7 +662,7 @@ export function ScannerTerminal() {
                     Optical Gate Check-In
                   </h2>
                   <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1 leading-relaxed">
-                    Tap to open your camera scanner, or enter a member ID below for instant contactless admission.
+                    Scan entrance pass QR code, or enter Member ID or Phone Number (09...) below for instant admission.
                   </p>
                 </div>
 
@@ -696,7 +695,7 @@ export function ScannerTerminal() {
                       value={scanInput}
                       onChange={(e) => setScanInput(e.target.value.toUpperCase())}
                       onKeyDown={handleKeyDown}
-                      placeholder="Enter Member ID (e.g. GYM-000123)"
+                      placeholder="Scan QR or enter Member ID / Phone (09...)"
                       autoComplete="off"
                       spellCheck="false"
                       disabled={scannerState === "CHECKING"}

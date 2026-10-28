@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+251 ");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -223,7 +223,10 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1.5">Phone Number *</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-300">Phone Number *</label>
+                      <span className="text-[10px] text-gray-400 font-mono">Format: 09... / 07...</span>
+                    </div>
                     <div className="relative">
                       <Phone size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                       <input
@@ -231,7 +234,7 @@ export default function RegisterPage() {
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+251 91 123 4567"
+                        placeholder="0911 234 567"
                         className="w-full rounded-xl bg-white/5 border border-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff331e]"
                       />
                     </div>

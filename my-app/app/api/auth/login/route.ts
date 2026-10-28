@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/db/mongodb";
 import { User } from "@/lib/models";
 import { COOKIE_NAME, signToken } from "@/lib/auth/session";
+import { normalizePhoneNumber } from "@/lib/phone";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -34,9 +35,21 @@ export async function POST(request: Request) {
       (normalized === envAdminUser || normalized === envAdminEmail) &&
       Boolean(envAdminPassword && password === envAdminPassword);
 
-    // Find by email or username
+    const normalizedPhone = normalizePhoneNumber(identifier);
+    const cleanUpper = identifier.trim().toUpperCase();
+
+    // Find by email, username, phone, or memberId
     let user = await User.findOne({
-      $or: [{ email: normalized }, { username: normalized }],
+      $or: [
+        { email: normalized },
+        { username: normalized },
+        { memberId: cleanUpper },
+        ...(normalizedPhone ? [
+          { phone: normalizedPhone },
+          { phone: `+251${normalizedPhone.replace(/^0/, "")}` },
+          { phone: normalizedPhone.replace(/^0/, "") },
+        ] : []),
+      ],
     });
 
     // Auto-provision admin if missing and matches .env

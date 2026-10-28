@@ -1,9 +1,38 @@
 import { connectDB } from "@/lib/db/mongodb";
 import { activateMembership } from "@/lib/memberships/activate";
-import { Payment } from "@/lib/models";
+import { COOKIE_NAME, signToken } from "@/lib/auth/session";
+import { Payment, User } from "@/lib/models";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+async function renewSessionCookie(userId: any) {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    const token = signToken({
+      userId: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      memberId: user.memberId,
+      isVerified: user.isVerified,
+    });
+
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    });
+  } catch (err) {
+    console.error("[RENEW_COOKIE_ERROR]", err);
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -22,6 +51,7 @@ export async function GET(request: Request) {
 
     // If already completed and membership active
     if (payment.status === "COMPLETED" && payment.subscriptionId) {
+      await renewSessionCookie(payment.userId);
       return NextResponse.json({
         success: true,
         status: "COMPLETED",
@@ -43,6 +73,8 @@ export async function GET(request: Request) {
       payment.status = "COMPLETED";
       payment.subscriptionId = activation.subscription._id;
       await payment.save();
+
+      await renewSessionCookie(payment.userId);
 
       return NextResponse.json({
         success: true,
@@ -88,6 +120,8 @@ export async function GET(request: Request) {
     payment.subscriptionId = activation.subscription._id;
     payment.chapaReference = chapaData.data.reference;
     await payment.save();
+
+    await renewSessionCookie(payment.userId);
 
     return NextResponse.json({
       success: true,

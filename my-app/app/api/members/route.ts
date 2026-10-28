@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db/mongodb";
 import { generateNextMemberId } from "@/lib/memberships/activate";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { Plan, Subscription, User } from "@/lib/models";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
     const user = await User.create({
       username,
       email,
-      phone: phone.trim(),
+      phone: normalizePhoneNumber(phone),
       fullName: fullName.trim(),
       gender: gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? gender : undefined,
       passwordHash,

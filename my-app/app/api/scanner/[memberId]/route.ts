@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db/mongodb";
-import { Subscription, Ticket, User } from "@/lib/models";
+import { findMemberAndTicket } from "@/lib/scanner-lookup";
+import { Subscription } from "@/lib/models";
 import type { AccessResponse } from "@/types/scanner";
 import { NextResponse } from "next/server";
 
@@ -15,26 +16,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
     }
 
     await connectDB();
+    const { user } = await findMemberAndTicket(tokenInput);
+
+    if (!user) {
+      return NextResponse.json({ success: false, status: "NOT_FOUND", message: "No member is registered with this ID or phone number." }, { status: 404 });
+    }
 
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
-
-    // Look up by ticketToken or memberId fallback
-    const ticket = await Ticket.findOne({
-      $or: [
-        { ticketToken: tokenInput },
-        { memberId: tokenInput.toUpperCase() },
-      ],
-    }).populate("subscriptionId").populate("userId");
-
-    let user = ticket?.userId as any;
-    if (!user) {
-      user = await User.findOne({ memberId: tokenInput.toUpperCase() });
-    }
-
-    if (!user) {
-      return NextResponse.json({ success: false, status: "NOT_FOUND", message: "No member is registered with this ID." }, { status: 404 });
-    }
 
     if (user.isSuspended) {
       return NextResponse.json(
@@ -74,7 +63,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
         {
           success: false,
           status: "EXPIRED",
-          message: "This membership has expired.",
+          message: "This membership has expired. Please renew membership.",
           member: memberData,
         },
         { status: 200 }

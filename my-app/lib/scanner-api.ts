@@ -25,26 +25,34 @@ async function readResponse(response: Response): Promise<AccessResponse> {
 }
 
 export async function verifyMember(memberId: string): Promise<AccessResponse> {
-  const localAccess = localMemberAccess(memberId);
-  if (localAccess) return localAccess;
-  const response = await fetch(`/api/scanner/${encodeURIComponent(memberId)}`, {
-    cache: "no-store",
-  });
-  return readResponse(response);
+  try {
+    const response = await fetch(`/api/scanner/${encodeURIComponent(memberId)}`, {
+      cache: "no-store",
+    });
+    return await readResponse(response);
+  } catch (err) {
+    const local = localMemberAccess(memberId);
+    if (local) return local;
+    throw err;
+  }
 }
 
 export async function recordCheckIn(memberId: string): Promise<AccessResponse> {
-  const localAccess = localMemberAccess(memberId);
-  if (localAccess) {
-    return {
-      ...localAccess,
-      checkIn: { id: crypto.randomUUID(), scannedAt: new Date().toISOString(), result: localAccess.status === "ACTIVE" ? "SUCCESS" : "EXPIRED" },
-    };
+  try {
+    const response = await fetch(`/api/check-ins`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId }),
+    });
+    return await readResponse(response);
+  } catch (err) {
+    const local = localMemberAccess(memberId);
+    if (local) {
+      return {
+        ...local,
+        checkIn: { id: crypto.randomUUID(), scannedAt: new Date().toISOString(), result: local.status === "ACTIVE" ? "SUCCESS" : "EXPIRED" },
+      };
+    }
+    throw err;
   }
-  const response = await fetch(`/api/check-ins`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ memberId }),
-  });
-  return readResponse(response);
 }

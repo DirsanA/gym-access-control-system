@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/db/mongodb";
+import { findMemberAndTicket } from "@/lib/scanner-lookup";
 import { ScanLog, Subscription, Ticket, User } from "@/lib/models";
 import type { AccessResponse } from "@/types/scanner";
 import { NextResponse } from "next/server";
@@ -63,54 +64,27 @@ export async function POST(request: Request) {
 
     await connectDB();
 
-    // Check if input is JSON from QR or plain string
-    let parsedToken = tokenInput;
-    let memberIdFromPayload = "";
-
-    try {
-      if (tokenInput.startsWith("{") && tokenInput.endsWith("}")) {
-        const obj = JSON.parse(tokenInput);
-        if (obj.ticketToken) parsedToken = obj.ticketToken;
-        if (obj.memberId) memberIdFromPayload = obj.memberId;
-      }
-    } catch {
-      // Use as string
-    }
-
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-
-    // Look up by ticketToken or memberId fallback
-    let ticket = await Ticket.findOne({
-      $or: [
-        { ticketToken: parsedToken },
-        { memberId: parsedToken.toUpperCase() },
-        ...(memberIdFromPayload ? [{ memberId: memberIdFromPayload.toUpperCase() }] : []),
-      ],
-    }).populate("subscriptionId").populate("userId");
-
-    // If no ticket, attempt direct User lookup by memberId
-    let user = ticket?.userId as any;
-    if (!user) {
-      user = await User.findOne({ memberId: parsedToken.toUpperCase() });
-    }
+    const { user, ticket, resolvedToken } = await findMemberAndTicket(tokenInput);
 
     if (!user) {
       await ScanLog.create({
-        memberId: parsedToken,
+        memberId: tokenInput,
         result: "NOT_FOUND",
-        message: "No member is registered with this ID/Token.",
+        message: "No member is registered with this ID or phone number.",
       });
 
       return NextResponse.json(
         {
           success: false,
           status: "NOT_FOUND",
-          message: "No member is registered with this ID or QR token.",
+          message: "No member is registered with this ID or phone number.",
         },
         { status: 404 }
       );
     }
+
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
 
     // Check suspension
     if (user.isSuspended) {

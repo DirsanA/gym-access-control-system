@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/db/mongodb";
 import { Otp, User } from "@/lib/models";
 import { generateOTP, hashString } from "@/lib/auth/session";
+import { isValidEthiopianPhone, normalizePhoneNumber } from "@/lib/phone";
 import { sendOtpEmail } from "@/lib/email/brevo";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -42,10 +43,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!phone || typeof phone !== "string" || phone.trim().length < 9) {
-      console.warn("[REGISTER VALIDATION FAILED] Invalid phone:", phone);
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (!normalizedPhone || !isValidEthiopianPhone(normalizedPhone)) {
+      console.warn("[REGISTER VALIDATION FAILED] Invalid phone:", phone, "normalized:", normalizedPhone);
       return NextResponse.json(
-        { success: false, message: "Please provide a valid phone number (e.g., +251 91 123 4567)." },
+        { success: false, message: "Please provide a valid Ethiopian phone number (e.g. 0911234567 or 0711234567)." },
         { status: 400 }
       );
     }
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
       registrationData: {
         username: normalizedUsername,
         email: normalizedEmail,
-        phone: phone.trim(),
+        phone: normalizedPhone,
         fullName: fullName?.trim() || username.trim(),
         gender: gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? gender : undefined,
         passwordHash,
